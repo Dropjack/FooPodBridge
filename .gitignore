@@ -1,0 +1,22 @@
+# Build and generated output
+/build/
+/out/
+/.vs/
+/CMakeUserPresets.json
+
+# Local runtime and device-private data
+/.local/
+/device-backups/
+/tests/private-fixtures/
+/tests/device-captures/
+*.device-dump
+
+# IDE and operating-system files
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+.DS_Store
+Thumbs.db
+
+# Packages are deliberate handoff artifacts. Keep dist visible to Git.
