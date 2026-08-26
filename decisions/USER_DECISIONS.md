@@ -37,6 +37,29 @@
 | DEC-UI-002 | 视觉稿时机 | 当前只冻结信息结构，详细 mockup 到对应 UI 任务再设计 |
 | DEC-TEST-001 | 运行环境 | AI 只用 FooCrate `foobar-dev`；用户只用 `foobar-test`；不碰 C 盘日常安装 |
 | DEC-PKG-001 | 交付 | 输出独立 FooPodBridge 与 FooCrate `.fb2k-component`，不混装 DLL |
+| DEC-IMP-001 | 正式直接复制格式 | 按设备能力矩阵判断；首批验证 MP3、AAC-LC/M4A 和设备确认支持的 ALAC；其他格式按真实需求与样本后续加入 |
+| DEC-IMP-002 | 不受支持格式 | 计划中逐项显示 Unsupported；默认不复制、不改文件，兼容项目可以继续 |
+| DEC-IMP-004 | 重复项判断 | 使用强匹配，默认 Skip；允许 Add duplicate；Replace metadata 暂不纳入冻结需求，待测试时重开决定 |
+| DEC-IMP-005 | 单曲失败 | 独立单曲问题警告并继续；空间、身份、数据库或事务错误立即停止批次 |
+| DEC-IMP-006 | 设备安全余量 | 导入后保留 `max(256 MiB, 总容量的 1%)`；用户可主动调低但不能设为零 |
+| DEC-META-001 | 元数据来源与字段范围 | 使用 foobar2000 正式 metadb/file info；写设备实际支持的核心字段，次要字段尽力写入，不反写源文件 |
+| DEC-META-002 | 缺少 ReplayGain | Track Gain 优先、Album Gain 次之；都缺失则不写 SoundCheck并提示，不自动扫描 |
+| DEC-META-003 | 封面来源 | 使用 foobar artwork service 的 Front Cover；第一张可解码图按设备能力处理，缺图不阻断 |
+| DEC-META-004 | Audiobook 分类 | 用户明确选择 Music/Audiobooks 导入目标；不根据 Genre、扩展名或其他字段偷偷改类型，支持时保留章节 |
+| DEC-META-005 | 缺少关键标签 | Title 缺失使用文件名；Artist/Album 使用 Unknown；可编辑本批设备值但不反写源文件 |
+| DEC-META-006 | Compilation 判定 | 明确标签优先；缺失时按统一 Album Artist + Album 且存在不同 Artist 自动推断，并合并本次、设备与 foobar 曲库证据 |
+| DEC-META-007 | Playback Statistics 评分 | `%rating%` 是电脑端唯一来源；导入时写设备 Rating，已有曲目只在明确刷新时单向覆盖，缺失评分清空设备值 |
+| DEC-PL-002 | 普通 playlist 创建与加曲 | 设备 UI 明确 New；禁止发送或拖入 foobar playlist 对象；允许把选中曲目批量加入已有设备 playlist |
+| DEC-PL-003 | foobar autoplaylist | 禁止发送、拖入、快照或翻译 autoplaylist 对象；可选择其中曲目执行普通导入或加入普通设备 playlist |
+| DEC-PL-004 | Smart Playlist 非实时规则 | 只有实机确认的组合显示 Live；其他可表达规则明确标记并由用户主动刷新，不支持规则拒绝 |
+| DEC-PL-005 | 删除语义 | Remove from Playlist 只删引用；Delete from iPod 显示影响并先提交 DB、后删文件 |
+| DEC-PL-006 | 删除后空 playlist | 保留空普通/Smart Playlist，只有用户明确删除容器才移除 |
+| DEC-SAFE-003 | 首次完整备份 | 开发/实机测试阶段每台设备首次写入前在设备外建立并验证一次 `iPod_Control` 基线；正式日常版前重开 |
+| DEC-SAFE-004 | 数据库恢复点 | 开发/实机测试阶段每台设备保留最近 10 个验证快照及至少一个 Last Known Good；正式日常版前重开数量 |
+| DEC-SAFE-005 | 临时/孤立文件 | 自动清理有操作记录且可证明由本项目创建的临时/orphan；未知未引用文件只报告 |
+| DEC-SAFE-006 | 取消后的成功项目 | 提交前取消不更新 DB，已复制文件作为本项目 orphan 清理；提交安全边界开始后完成或恢复 |
+| DEC-SAFE-007 | 多设备并发 | 可同时显示多台设备，但全进程一次只执行一个写事务；首版实机测试后复核 |
+| DEC-SAFE-008 | 设备弹出边界 | FooPodBridge 不提供或调用 Eject；完成后释放全部句柄，由用户通过 Windows 资源管理器弹出 |
 
 ## 3. 必须提供的实机证据
 
@@ -70,7 +93,7 @@
 - B：把 Apple 历史规格列出的所有音频格式一次性纳入首个目标。
 - C：只支持 MP3 与 AAC-LC，其他即使设备可能支持也拒绝。
 
-状态：待决定。阻断 media capability 规格。
+状态：已批准（2026-08-26），采用 A。首批只把 MP3、AAC-LC/M4A 和目标设备确认支持的 ALAC 纳入正式直接复制验证；WAV、AIFF、Audible 等格式等待真实需求和样本，不因历史规格自动宣称支持。
 
 ### DEC-IMP-002：不受支持格式的默认行为
 
@@ -78,13 +101,13 @@
 - B：一个不支持项目阻断整个批次。
 - C：无提示跳过。
 
-状态：待决定。C 不符合项目错误透明原则，不建议。
+状态：已批准（2026-08-26），采用 A。不支持项目逐项显示 Unsupported，默认不复制、不修改源文件或设备；批次中的兼容项目仍可继续进入计划。
 
 ### DEC-IMP-003：FLAC 自动转码
 
 用户已决定稍后再判断。当前正式行为冻结为“识别 FLAC、明确拒绝直接导入、不自动转码”。若以后批准转码，建立独立永久任务并决定编码器、AAC profile、质量、临时空间和元数据保留。
 
-状态：延后决定；不阻断无转码产品路线。
+状态：延后决定（2026-08-26 再确认）；当前优先执行 `DEC-IMP-001/002`，FLAC 只识别并明确拒绝直接导入，不自动转码。
 
 ### DEC-IMP-004：重复项判断
 
@@ -92,7 +115,7 @@
 - B：只按文件名判断。
 - C：每次对源文件和设备文件做完整内容哈希。
 
-状态：待决定。A 避免 C 的 USB 读回成本，也比 B 可靠。
+状态：已批准（2026-08-26），采用经收窄的 A。使用标准化字段、时长容差和媒体类型强匹配，默认 Skip，并允许用户明确选择 Add duplicate。Replace metadata 暂不纳入已冻结需求，待后续重复项测试时重新核对；在此之前不能自动覆盖设备记录。
 
 ### DEC-IMP-005：批次中的单曲失败
 
@@ -100,7 +123,7 @@
 - B：任何一首失败都回滚整批。
 - C：任何错误都尽量继续。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。格式、gapless、封面等独立单曲问题记录警告并继续；空间、设备身份、数据库或事务错误立即停止批次。
 
 ### DEC-IMP-006：设备安全余量
 
@@ -108,7 +131,7 @@
 - B：只要文件系统报告能放下就允许写满。
 - C：固定保留 1 GiB。
 
-状态：待决定。阻断空间预检。
+状态：已批准（2026-08-26），采用 A。导入后至少保留 `max(256 MiB, 总容量的 1%)`；用户可以主动调低，但不能设为零。
 
 ## 5. 第二轮：元数据、SoundCheck、封面与 Audiobook
 
@@ -118,7 +141,7 @@
 - B：直接读取文件标签，忽略 foobar 组件提供的字段。
 - C：写入用户在 FooPodBridge 单独维护的第二份元数据。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。读取 foobar2000 正式 metadb/file info 的原始字段，不把带回退的 UI 标题格式结果当作设备元数据。核心用户字段至少包含 Title、Artist、Album Artist、Album、Compilation、Year/Date、Track Number 和 Disc Number；设备明确支持的 Genre、Composer、BPM、Sort 等次要字段在源数据存在时尽力写入，缺失不阻断，设备不使用的字段忽略。源文件标签不反写。
 
 ### DEC-META-002：缺少 ReplayGain 时的 SoundCheck
 
@@ -126,7 +149,7 @@
 - B：缺失时自动执行 ReplayGain 扫描后再导入。
 - C：所有曲目都不看已有值，统一重新扫描。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。优先使用 ReplayGain Track Gain，缺失时使用 Album Gain；两者都缺失则不写 SoundCheck并在计划中提示，不自动扫描整首音频。
 
 ### DEC-META-003：封面来源
 
@@ -134,7 +157,7 @@
 - B：只使用音频内嵌封面。
 - C：支持每曲多张封面和封面类型编辑。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。使用 foobar artwork service 的 Front Cover，取第一张可解码图并按设备能力生成缓存；缺图不阻断导入，不把原图写入项目数据库。
 
 ### DEC-META-004：Audiobook 分类
 
@@ -142,7 +165,7 @@
 - B：自动根据 M4B/Genre 推断，用户不选目标。
 - C：Music 与 Audiobooks 没有行为差异。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A 的明确用户意图。用户选择 Music 或 Audiobooks 作为导入目标；选择 Audiobooks 时写 Media Kind=Audiobook、Remember Playback Position、Skip When Shuffling，并在支持时保留章节；选择 Music 时不根据 Genre、`.m4b` 或其他字段偷偷改类型。第一版可以在统一 Library 中管理两种 Media Kind，不要求独立 Audiobooks 页签；具体目标选择/拖放入口留到 UI 任务冻结。
 
 ### DEC-META-005：缺少关键标签
 
@@ -150,17 +173,50 @@
 - B：关键标签缺失就拒绝导入。
 - C：原样写空字段。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。Title 缺失时使用不含路径的文件名；Artist/Album 缺失显示 Unknown；计划中可编辑本批设备值，但不反写源文件。
+
+### DEC-META-006：Compilation 判定
+
+问题：foobar2000 曲库，尤其 FLAC，通常只用统一的 Album Artist 管理合辑，没有独立 Compilation 标签；FooPodBridge 需要在不要求用户补标签的前提下生成 iPod Compilation 状态。
+
+批准规则：
+
+1. 明确、可解析的 Compilation/ITUNESCOMPILATION 值优先；明确 false 不被自动推断覆盖。
+2. 没有明确值时，以规范化后的原始 Album Artist + Album 作为专辑身份；不能使用会回退到 Artist/Composer/Performer 的显示字段。
+3. 同一专辑具有统一且非空的 Album Artist，并存在至少两个不同的 Artist 时，自动推断 Compilation=true；Album Artist 不要求是 `Various Artists`。
+4. 推断证据合并本次待导入曲目、设备上已有的同专辑曲目，以及 foobar 曲库中能够无歧义匹配的同专辑曲目。
+5. 一旦推断成立，同一事务把设备上同专辑曲目的 Compilation 状态保持一致；保留各曲目 Artist 和原始 Album Artist，不强制改成 `Various Artists`。
+6. Operation Plan 显示 `Compilation: inferred`。推断不修改 foobar2000 源文件标签。
+7. 已知权衡：固定 Album Artist、但具有不同客串 Artist 的普通专辑也可能被判为 Compilation；用户接受这一自动化规则。
+
+状态：已批准（2026-08-26）。
+
+### DEC-META-007：Playback Statistics 评分导出到设备
+
+背景：FooCrate 不保存私有评分；它通过 foobar2000 正式 metadb 句柄读取 Playback Statistics 提供的 `%rating%`，并调用该组件的 `Rating/1` 至 `Rating/5` 命令写入。FooPodBridge 因此可以直接读取同一个动态字段，不依赖 FooCrate，也不读取音频文件 `RATING` 标签。
+
+- A（推荐）：以 Playback Statistics 的 `%rating%` 为电脑端唯一评分来源。新导入曲目把 1–5 星写成设备原生 Rating；已有设备曲目只在用户明确执行 `Refresh ratings from foobar` 时批量刷新。刷新是带 Operation Plan 的单向快照：缺失评分清除设备 Rating，设备端评分不反写 foobar，下一次明确刷新可以覆盖设备端改动；不后台同步。原生 Smart Playlist 可据此使用 `Rating = N`，并在设备能力允许时与 Artist 等条件组合。
+- B：只在曲目首次导入时复制评分；以后不提供批量刷新，评分变化可能长期不反映到设备 Smart Playlist。
+- C：不向设备导出评分；Rating 类原生 Smart Playlist 只能依赖用户在设备端维护的评分。
+
+状态：已批准（2026-08-26），采用 A。用户明确确认 Playback Statistics 是电脑端唯一评分事实来源；明确刷新时，缺失 `%rating%` 会清空设备 Rating，设备端评分改动会在下一次明确刷新时被电脑端值覆盖。该功能是用户触发、带 Operation Plan 的单向导出/刷新，不后台运行、不从设备反写电脑，因此不改变 `DEC-SCOPE-003` 禁止双向同步的边界。
 
 ## 6. 第三轮：playlist、Smart Playlist 与删除
 
-### DEC-PL-002：发送 foobar 普通 playlist 时名称冲突
+### DEC-PL-002：设备普通 playlist 创建与曲目加入
 
 - A（推荐）：如果是本次会话中明确选中的同一设备 playlist，则 Replace contents；只按名称撞车时要求选择 Replace、Create new 或 Cancel，不默认 Merge。
 - B：总是 Merge 并去重。
 - C：总是创建带编号的新 playlist。
 
-状态：待决定。
+状态：已批准（2026-08-26），不采用直接发送 playlist 的 A/B/C 流程。设备普通 playlist 只能通过设备 UI 的明确 New 操作创建；禁止把 foobar 普通 playlist 对象发送或拖入设备，也不根据名称创建、替换或合并容器。用户可以在任意 foobar playlist 中选择大量曲目，并把“曲目选择”加入已存在的设备普通 playlist；已有设备 playlist 仍可重命名、增删成员、调整顺序和删除。
+
+曲目加入规则：
+
+1. 曲目不在设备 Library：按第一轮导入规则写入，成功后加入 playlist。
+2. 曲目已在设备 Library、但不在目标 playlist：不复制音频，复用现有设备 track ID 加入 playlist。
+3. 曲目已在目标 playlist：默认 Skip，不建立重复成员。
+4. `Replace metadata` 继续保持延后决定，不能因 playlist 加曲自动覆盖设备记录。
 
 ### DEC-PL-003：发送 foobar autoplaylist
 
@@ -168,7 +224,7 @@
 - B：尝试把所有 foobar 查询自动翻译成 Apple Smart Playlist，翻译失败才快照。
 - C：禁止发送 autoplaylist。
 
-状态：待决定。原生 Apple Smart Playlist 仍由独立编辑器创建。
+状态：已批准（2026-08-26），采用禁止传输对象的方向。foobar autoplaylist 不能发送、拖入、生成普通快照或自动翻译为 iPod Smart Playlist。用户可以打开 autoplaylist 并选择其中的曲目，把这些曲目作为普通批次导入或加入普通设备 playlist；这不传输 autoplaylist 对象。原生 iPod Smart Playlist 只通过 FooPodBridge 规则编辑器明确新建和编辑。
 
 ### DEC-PL-004：Smart Playlist 非实时规则
 
@@ -176,7 +232,7 @@
 - B：只要数据库格式能写就全部允许，并一律显示 Live。
 - C：完全禁止非实时规则。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。只有目标设备实机确认支持的规则组合才显示 Live Updating；可保存但不能由设备实时重算的规则明确标记 Refresh on next connection，并由用户主动刷新；不能表达或未经确认的字段/运算符拒绝保存。具体能力矩阵留到参考审计、格式测试和 Photo/Classic 实机验证。
 
 ### DEC-PL-005：删除语义
 
@@ -184,47 +240,53 @@
 - B：Delete 键总是从设备彻底删除。
 - C：组件只允许从 playlist 移除，不允许删设备曲目。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。`Remove from Playlist` 只移除引用；`Delete from iPod` 显示受影响 playlist 和文件大小并确认，成功提交不再引用目标的数据库后才删除文件。
 
 ### DEC-PL-006：删除后空 playlist
 
 - A（推荐）：保留用户创建的空普通/Smart Playlist；只有用户明确删除容器才移除。
 - B：自动删除空 playlist。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。保留用户创建的空普通/Smart Playlist；只有用户明确删除 playlist 容器时才移除。
 
 ## 7. 第四轮：备份、恢复与设备生命周期
 
 ### DEC-SAFE-003：第一次完整备份位置
 
+这里的“完整备份”不是 FooPodBridge 日常提供的 iPod 备份服务，也不是每次导入都复制音乐。它只是在 FooPodBridge 第一次对某台实机执行开发/正式写入前，由用户把可恢复的 `iPod_Control` 基线保存到 iPod 之外；目的是在早期 Writer、数据库格式或设备差异判断出错时，仍能恢复写入前状态。
+
 - A（推荐）：用户选择 iPod 之外的目录；FooPodBridge记录备份清单、数据库指纹和验证结果，但不把备份提交 Git。
 - B：只备份到同一 iPod 隐藏目录。
 - C：不验证完整备份，只保存当前 iTunesDB。
 
-状态：待决定。B/C 无法充分覆盖文件系统或设备故障。
+状态：阶段性批准（2026-08-26），开发与实机测试阶段采用 A。每台物理设备首次写入前，由用户在设备外建立并验证一次 `iPod_Control` 基线；不要求日常重复完整备份，也不把 FooPodBridge 扩展成通用 iPod 备份工具。正式日常版本前重新核对是否继续保留该门槛。
 
 ### DEC-SAFE-004：每次事务数据库备份保留
+
+这里保存的是电脑端的小型设备数据库恢复点与指纹，不复制音频，也不是 artwork/媒体缓存，不会加速浏览或导入。用途是在本次提交中断，或数次操作后才发现数据库逻辑错误时，找到经过验证的旧数据库版本；占用通常远小于音乐文件。
 
 - A（推荐）：按物理设备保存最近 10 个验证通过的数据库快照，并永不自动删除最后一个 Last Known Good；Preferences 可查看占用和手动清理。
 - B：只保留上一次。
 - C：永久保留全部。
 
-状态：待决定。
+状态：阶段性批准（2026-08-26），开发与实机测试阶段采用 A：按物理设备保留最近 10 个验证通过的数据库快照，最后一个 Last Known Good 永不自动删除，用户可查看占用并手动清理较旧快照。正式日常版本前重新核对保留数量；即使以后取消 10 份历史，也不能取消事务中的临时回滚保护和至少一个 Last Known Good。
 
 ### DEC-SAFE-005：FooPodBridge 临时/孤立文件清理
+
+这是事故收尾而不是“清理 iPod”功能：取消、崩溃或数据库提交失败后，可能留下未被数据库引用的临时音频。FooPodBridge 只对拥有有效操作记录、能够证明由自己创建的文件自动处理；对来源不明的未引用文件没有所有权。
 
 - A（推荐）：自动清理有有效操作记录、明确由本项目创建且不被 DB 引用的 `.tmp`；未知孤立音频只报告并让用户选择。
 - B：自动删除所有 DB 未引用文件。
 - C：从不清理，只报告路径。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。自动范围永久限于具有有效操作记录、能够证明由 FooPodBridge 创建且不被数据库引用的 `.tmp`/orphan；未知孤立音频只报告并由用户明确选择，不把 FooPodBridge 做成通用磁盘清理器。
 
 ### DEC-SAFE-006：取消后的成功项目
 
 - A（推荐）：提交前取消则不更新 DB，成功复制文件作为本项目 orphan 清理；提交阶段进入安全边界后完成或恢复，不产生“半个 playlist”。
 - B：取消时把已复制曲目提交到 DB。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。提交前取消不更新设备数据库，已经复制的文件作为有操作记录的本项目 orphan 进入清理；数据库提交安全边界开始后不强行打断关键序列，而是完成到有效状态或按恢复记录恢复，不能留下半个 playlist。
 
 ### DEC-SAFE-007：多设备并发
 
@@ -232,7 +294,7 @@
 - B：每台设备各自并行写入。
 - C：只显示第一台设备。
 
-状态：待决定。
+状态：已批准（2026-08-26），采用 A。可以同时发现和浏览多台设备，但 FooPodBridge 全进程一次只允许一个写事务，其他设备的写请求排队或明确拒绝；首版在两台实机同时连接场景复核后再决定是否有必要放宽。
 
 ### DEC-SAFE-008：完成后弹出
 
@@ -240,7 +302,7 @@
 - B：每个成功批次自动弹出。
 - C：Preferences 可设置自动弹出。
 
-状态：待决定。
+状态：已批准（2026-08-26），不采用 A/B/C 中由组件执行弹出的设计。FooPodBridge 不提供 Eject 按钮、不调用系统弹出，也不把整台 iPod 的移除生命周期当作产品职责；每次操作结束后必须及时 Flush 并释放所有设备文件句柄，由用户使用 Windows 资源管理器的 Eject。事务中发生外部弹出或物理移除仍按中断/恢复模型处理。
 
 ## 8. 第五轮：UI、诊断、许可证与发布
 
@@ -268,7 +330,7 @@
 
 ### DEC-UI-006：Default UI 功能范围
 
-- A（推荐）：设备概览、Library/playlist 浏览、导入、删除、进度和 Eject；复杂 Smart Playlist 编辑通过统一管理对话框打开。
+- A（推荐）：设备概览、Library/playlist 浏览、导入、删除和进度；复杂 Smart Playlist 编辑通过统一管理对话框打开。所有入口都不提供 Eject。
 - B：与 FooCrate 完全同布局。
 - C：只读设备信息。
 

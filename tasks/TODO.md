@@ -77,7 +77,7 @@
 
 - 前置：任务 005 已验收；FooCrate UI 模块规格与 mockup 获用户批准。
 - 目标：用真实 FooPodBridge 服务数据把 Devices namespace 和只读 Device Workspace 加入 FooCrate。
-- 产物：FooCrate 服务消费者、真实设备树、Music/Audiobooks/playlist 浏览和 Unsupported/移除状态。
+- 产物：FooCrate 服务消费者、真实设备树、统一 Library 中的 Music/Audiobook Media Kind、playlist 浏览和 Unsupported/移除状态。
 - 自动检查：服务缺失隐藏、版本不兼容、热插拔、快照代次、窗口销毁、DPI/主题。
 - 用户检查：在 `foobar-test` 浏览两台设备，确认 FooCrate 原有 playlist/album/lyrics 不回归。
 - 通过标准：没有假数据和写入按钮占位；只读能力完整可日常浏览。
@@ -87,9 +87,9 @@
 ### 007 实现设备事务、备份与故障恢复核心
 
 - 前置：任务 005 已验收；`DEC-SAFE-*` 全部批准。
-- 目标：实现 Operation Plan、单设备写锁、批次暂存、数据库备份、恢复记录、取消和故障注入，不写真实设备。
-- 产物：transaction 模块、抽象文件系统、恢复工具和完整故障矩阵。
-- 自动检查：磁盘满、短写、Flush、重命名、权限、代次变化、取消各阶段、恢复组合。
+- 目标：实现 Operation Plan、单设备写锁、批次暂存、数据库备份、恢复记录、取消和故障注入，不写真实设备；落实测试期每设备 10 个验证快照和 Last Known Good 保护。
+- 产物：transaction 模块、抽象文件系统、首次外部基线清单、恢复工具、数据库快照保留模型和完整故障矩阵。
+- 自动检查：磁盘满、短写、Flush、重命名、权限、代次变化、取消各阶段、恢复组合、10 份轮换和 Last Known Good 不被自动删除。
 - 用户检查：查看每个中断点留下的临时目录，确认旧测试 DB 可恢复。
 - 通过标准：所有模拟故障满足 `SAFETY_MODEL.md`，才允许首轮实机写入任务。
 
@@ -97,16 +97,16 @@
 
 - 前置：任务 007 已验收；Photo 外部备份和唯一测试曲目已验证；直接格式/元数据决定已批准。
 - 目标：在 Photo 上完成一条可长期使用的 Music 导入纵向能力。
-- 产物：预检、重复/空间、批准格式、元数据、SoundCheck、Photo DB 写入、FooCrate 计划/进度/结果和恢复。
-- 自动检查：兼容/不兼容、空间、FAT32、标签缺失、SoundCheck、单曲/批次失败、数据库读回。
-- 用户检查：只导入批准测试曲，弹出、重启 iPod、播放、再连接，然后按任务删除恢复原状。
+- 产物：预检、重复/空间、批准格式、元数据、Playback Statistics Rating、SoundCheck、Photo DB 写入、FooCrate 计划/进度/结果和恢复。
+- 自动检查：兼容/不兼容、空间、FAT32、标签缺失、Rating、SoundCheck、单曲/批次失败、数据库读回。
+- 用户检查：只导入批准测试曲，确认组件释放句柄后用 Windows 资源管理器弹出，重启 iPod、播放、再连接，然后按任务删除恢复原状。
 - 通过标准：实机能浏览/播放；备份和恢复证据完整；不能借机写 Classic。
 
 ### 009 完成 iPod Classic 手动 Music 导入
 
 - 前置：任务 008 已验收；Classic 外部备份和测试曲已验证。
 - 目标：在 Classic 上完成同一纵向能力，并加入 hash58、准确 gapless 和 Classic 数据库/封面能力边界。
-- 产物：Classic 实机接受的数据库、连续专辑 gapless 测试和 FooCrate 统一结果。
+- 产物：Classic 实机接受的数据库、Playback Statistics Rating、连续专辑 gapless 测试和 FooCrate 统一结果。
 - 自动检查：hash58 输入、连续 MP3/AAC、gapless 无数据警告、错误 hash 恢复、批次性能。
 - 用户检查：导入批准测试曲与连续曲目，重启 Classic 后验证 Library、播放和 gapless。
 - 通过标准：Classic 不显示空 Library，SoundCheck/gapless 与数据库再次连接均通过。
@@ -124,8 +124,8 @@
 ### 011 完成普通设备播放列表管理
 
 - 前置：任务 010 已验收；playlist 冲突/快照决定已批准。
-- 目标：完整管理普通 iPod playlist，并手动发送 foobar playlist/autoplaylist 当前结果。
-- 产物：新建、重命名、删除、排序、成员编辑、缺失曲目同批导入和冲突 UI。
+- 目标：完整管理普通 iPod playlist；设备 UI 明确 New 后加入曲目选择，不传输 foobar playlist/autoplaylist 对象。
+- 产物：新建、重命名、删除、排序、成员编辑、缺失曲目同批导入、已有 track ID 复用和目标成员去重。
 - 用户检查：两台设备创建/编辑/删除，重启后顺序与成员正确；确认没有后台同步。
 - 通过标准：master Library 引用完整，普通/Smart 类型不混淆。
 
@@ -140,18 +140,18 @@
 ### 013 完成 Audiobook 导入与章节属性
 
 - 前置：任务 012 已验收；Audiobook 决定与样本获批准。
-- 目标：把手动导入到 Audiobooks 的内容正确标记，并处理章节和 FAT32 大文件限制。
-- 产物：Audiobook media kind、bookmark、shuffle、章节、封面和专属预检。
+- 目标：把用户明确选择 Audiobooks 目标的内容正确标记，并处理章节和 FAT32 大文件限制；不靠扩展名或 Genre 偷猜类型。
+- 产物：统一 Library 中的 Audiobook media kind、bookmark、shuffle、章节、封面和专属预检。
 - 用户检查：两台设备播放、暂停、返回续播、随机播放排除和章节；Photo 不支持项明确显示。
 - 通过标准：不能靠扩展名误分类 Music；超限文件在复制前拒绝。
 
 ### 014 完成原生 iPod Smart Playlist 编辑器
 
 - 前置：任务 011 已验收；Smart Playlist 规则与刷新决定批准。
-- 目标：在两台目标设备能力范围内完整创建、读取和编辑 Apple Smart Playlist。
-- 产物：规则模型、设备能力字段/运算符、嵌套、限制、排序、初始成员、Live/刷新语义和编辑 UI。
-- 自动检查：规则往返、未知字段、嵌套、日期/数字/playlist 引用、设备不支持拒绝、成员计算。
-- 用户检查：两台设备各创建多规则列表，播放/新增数据后验证其批准的更新语义。
+- 目标：在两台目标设备能力范围内完整创建、读取和编辑 Apple Smart Playlist；不接受手工成员或 foobar autoplaylist 转换，并提供已有设备曲目的明确单向 Rating 刷新。
+- 产物：规则模型、设备能力字段/运算符、嵌套、限制、排序、初始成员、Live/刷新语义、Rating 刷新计划和编辑 UI。
+- 自动检查：规则往返、未知字段、嵌套、日期/数字/playlist 引用、Rating 写入/清除/覆盖、设备不支持拒绝、成员计算。
+- 用户检查：两台设备建立 Rating 2–5 的列表和 Rating + Artist 组合；修改电脑端评分并明确刷新，验证写入、清除、设备端改动覆盖和批准的 Live/手动更新语义。
 - 通过标准：不以普通快照冒充；已有 iTunes Smart Playlist 不损坏。
 
 ## 6. 阶段 E：完成三套 UI
@@ -160,7 +160,7 @@
 
 - 前置：任务 008–014 已验收；FooCrate 完整 UI mockup 和模块规格批准。
 - 目标：把所有正式手动管理能力以 FooCrate 风格整合到 Device Workspace。
-- 产物：容量、计划、拖放、进度、结果、错误、取消、恢复、Smart Playlist 编辑和 Eject。
+- 产物：容量、计划、拖放、进度、结果、错误、取消、恢复和 Smart Playlist 编辑；完成后显示句柄已释放，不提供 Eject。
 - 自动检查：主题、DPI、窗口生命周期、服务消失、操作中关闭/重开、键盘与拖放。
 - 用户检查：在 `foobar-test` 以 FooCrate 完成完整日常流程和多场景回归。
 - 通过标准：FooCrate 是首要、完整管理入口，原有功能无回归。
@@ -187,6 +187,7 @@
 
 - 前置：任务 015–017 已验收；诊断/备份决定批准。
 - 目标：提供可迁移设置、Last Known Good、占用/清理和脱敏诊断导出。
+- 正式化门槛：在本任务验收前重新核对 `DEC-SAFE-003/004`，决定日常版是否继续要求首次完整基线以及数据库快照保留数量；事务回滚保护和至少一个 Last Known Good 不可取消。
 - 产物：Preferences、稳定 GUID、配置迁移、备份查看/恢复、日志边界。
 - 用户检查：Apply/Cancel/Reset、升级、损坏配置、备份恢复和诊断预览。
 - 通过标准：不能通过设置绕过设备支持；隐私内容默认遮蔽。

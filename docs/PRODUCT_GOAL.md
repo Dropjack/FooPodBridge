@@ -33,23 +33,24 @@
 - 从 foobar2000/FooCrate 主动拖入或发送设备原生支持的音频；
 - 导入前检查设备身份、格式/profile、空间、重复项、目标类别和冲突；
 - 将音频、元数据、排序字段、封面、SoundCheck、gapless 和 Audiobook 属性写入正确设备结构；
+- 将 Playback Statistics 评分在导入或用户明确刷新时单向写为设备原生 Rating，供原生 Smart Playlist 使用；
 - 从设备 Library 删除曲目，或只从某个播放列表移除引用，并让两种行为明确区分；
 - 创建、重命名、删除、排序和编辑普通设备播放列表；
 - 创建、查看和编辑原生 iPod Smart Playlist，在设备能力范围内支持规则、限制、排序和 Live Updating；
 - 显示批次计划、逐项进度、成功、警告、失败、取消和恢复结果；
 - 每个写入批次执行备份、暂存、数据库往返验证、提交和中断恢复；
-- 在没有进行写事务时安全弹出设备；
+- 每次操作结束后 Flush 并释放全部设备句柄，让用户继续通过 Windows 资源管理器弹出；组件本身不提供 Eject；
 - 提供 FooCrate 集成 UI、独立 Columns UI Device Panel 和简化 Default UI Element。
 
 ## 4. 已批准的产品行为
 
 - 只正式写入维护者实测的 iPod Photo 和 iPod Classic。
 - 纯手动管理；没有后台同步、媒体库镜像或一键 Sync。
-- 不双向同步播放次数、评分、跳过次数或播放位置。
+- 不双向同步播放次数、评分、跳过次数或播放位置；评分仅按用户明确操作从 Playback Statistics 单向导出，设备端改动不反写电脑。
 - 导入支持 ReplayGain 到 SoundCheck。
 - Classic 写准确 gapless 数据；Photo 不承诺。扫描失败不阻断批次，不写 dummy 数据。
 - 实现真正的原生 iPod Smart Playlist 编辑器，不用普通 playlist 冒充。
-- FooCrate autoplaylist 与 Apple Smart Playlist 不是同一种规则；不能无损翻译时必须如实说明。
+- foobar/FooCrate playlist 对象不发送或拖入设备；普通设备 playlist 由用户明确 New 后加入曲目，原生 Apple Smart Playlist 只通过规则编辑器创建和编辑。
 - Podcasts、Video、Photo、iPhone、iPod touch 和云内容不在产品范围内。
 - 未验证设备显示 Unsupported 并拒绝所有写入。
 
@@ -66,7 +67,7 @@
 
 ## 6. 仍由用户决定的产品方向
 
-所有尚未批准的选择集中在 [`USER_DECISIONS.md`](../decisions/USER_DECISIONS.md)。其中包括直接复制格式、FLAC 转码、SoundCheck 缺少 ReplayGain 时的行为、重复项、播放列表冲突、备份保留、清理策略、UI 信息结构细节、许可证和首轮实机样本。
+所有尚未批准的选择集中在 [`USER_DECISIONS.md`](../decisions/USER_DECISIONS.md)。直接导入、元数据、评分、playlist、删除、测试期备份/恢复、清理、取消、多设备和外部移除边界已经批准；仍待核对的内容包括 FLAC 转码、正式日常版是否继续要求首次完整基线及保留多少数据库快照、UI 信息结构细节、许可证和首轮实机样本。
 
 这些决定不是模糊占位：每项都有推荐方案、替代方案、影响范围和阻断任务。当前任务 000 的完成条件就是逐项批准或明确排除它们。
 

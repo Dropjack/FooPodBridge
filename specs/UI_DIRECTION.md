@@ -20,14 +20,14 @@ Playlists
 
 Devices
 └── <Device Name>
-    ├── Music
-    ├── Audiobooks
+    ├── Library
+    │   └── Music / Audiobook media kinds
     └── Playlists
         ├── <Normal Playlist>
         └── <Smart Playlist>
 ```
 
-选择设备节点后进入 Device Workspace。详细决定包括中央曲目列表、设备概览、容量条、传输队列、右栏作用和 Smart Playlist 编辑器入口；用户已明确要求到 UI 任务再看 mockup 后决定。
+选择设备节点后进入 Device Workspace。第一版允许在统一 Library 中管理 Music 与 Audiobook，不强制独立 Audiobooks 页签；用户仍必须明确选择导入 Media Kind。详细决定包括筛选/目标入口、中央曲目列表、设备概览、容量条、传输队列、右栏作用和 Smart Playlist 编辑器入口；用户已明确要求到 UI 任务再看 mockup 后决定。
 
 ### 独立 Columns UI Device Panel
 
@@ -54,7 +54,7 @@ Devices
 | Updating library | 音频已准备，正在生成/验证/提交数据库 |
 | Cleaning | 正在完成删除或临时文件清理 |
 | Recovery required | 检测到中断事务，需要明确恢复 |
-| Ejecting | 正在等待事务结束并请求系统弹出 |
+| Completed | 操作结束且设备句柄已释放；需要时由用户通过 Windows 资源管理器弹出 |
 
 UI 不能只用颜色区分 Ready、Unsupported、错误或当前操作。
 
@@ -63,22 +63,24 @@ UI 不能只用颜色区分 Ready、Unsupported、错误或当前操作。
 UI 只能发出以下高层意图：
 
 - 浏览某个设备 namespace 或 playlist；
-- 导入选中曲目到 Music、Audiobooks 或指定 playlist；
+- 明确选择 Music、Audiobooks Media Kind 或指定 playlist 后导入选中曲目；
 - 从 playlist 移除引用；
 - 从设备删除曲目；
 - 新建、重命名、删除或编辑普通 playlist；
 - 新建、查看或编辑 Smart Playlist；
+- 明确执行 `Refresh ratings from foobar`，在计划中检查将写入、保持、清除或覆盖的设备 Rating；
 - 查看操作计划、进度、结果和恢复建议；
-- 取消、重试、清理或弹出。
+- 取消、重试或清理由本项目产生的临时文件；不提供 Eject 命令。
 
 UI 不能发出“覆盖 iTunesDB”“删除 F12 文件”或“忽略 hash58”之类底层命令。
 
 ## 4. 拖放方向
 
-- 拖到 Music：按设备音乐能力检查并写 Music 类型；
-- 拖到 Audiobooks：写 Audiobook、Remember Playback Position、Skip When Shuffling，并在支持时保留章节；
-- 拖到普通 playlist：计划缺失曲目导入和 playlist 引用属于同一批事务；
-- 拖到 Smart Playlist：不能用手工成员破坏规则；编辑器或明确命令决定行为；
+- 选择 Music 目标：按设备音乐能力检查并写 Music 类型，不根据 Genre、`.m4b` 或其他字段偷偷改类；
+- 选择 Audiobooks 目标：写 Audiobook、Remember Playback Position、Skip When Shuffling，并在支持时保留章节；
+- 拖选中的曲目到普通设备 playlist：缺失曲目导入和 playlist 引用属于同一批事务；设备已有曲目复用 track ID，目标 playlist 已有成员默认 Skip；
+- foobar 普通/autoplaylist 对象：禁止发送或拖入设备；用户必须先在设备 UI 明确 New，再拖入曲目选择；
+- Smart Playlist：不能拖入手工成员；只能通过原生规则编辑器明确新建或编辑；
 - FLAC：当前显示 Unsupported format，不自动转码；未来只有 `DEC-IMP-003` 重开后才改变；
 - 不支持目标、空间不足或事务进行中时提供明确禁止反馈。
 

@@ -14,7 +14,7 @@
 - 当前任务：[`000-确定项目目标与全部产品决策`](000-确定项目目标与全部产品决策/README.md)
 - 状态：规格核对中
 - 当前阶段：设计文档已形成初稿，等待用户逐项核对
-- 当前下一步：从 [`USER_DECISIONS.md`](../decisions/USER_DECISIONS.md) 第一轮开始确认直接导入行为，并准备两台设备的非隐私身份信息
+- 当前下一步：开始 [`USER_DECISIONS.md`](../decisions/USER_DECISIONS.md) 第三轮 playlist、Smart Playlist 与删除决策，并准备两台设备的非隐私身份信息
 - 当前禁止：不创建 CMake/C++、不生成组件、不启动或部署 foobar2000、不写任何实机
 
 ## 状态定义
@@ -50,7 +50,7 @@
 | 012 | 完成 Music artwork 管理 | 待讨论 | Photo/Classic 封面格式、共享引用与安全清理 |
 | 013 | 完成 Audiobook 导入与章节属性 | 待讨论 | Audiobook namespace、bookmark、shuffle、章节与 4 GiB 预检 |
 | 014 | 完成原生 iPod Smart Playlist 编辑器 | 待讨论 | 设备规则模型、编辑器、初始成员、Live/刷新语义 |
-| 015 | 完成 FooCrate 写入与传输体验 | 待讨论 | 正式 Device Workspace、计划、进度、结果、取消、弹出 |
+| 015 | 完成 FooCrate 写入与传输体验 | 待讨论 | 正式 Device Workspace、计划、进度、结果、取消、恢复与句柄释放状态 |
 | 016 | 完成独立 Columns UI Device Panel | 待讨论 | 不依赖 FooCrate 的完整 Columns UI 入口 |
 | 017 | 完成简化 Default UI Element | 待讨论 | Default UI 原生入口与统一管理对话框 |
 | 018 | 完成 Preferences、诊断与备份管理 | 待讨论 | 设置迁移、脱敏诊断、Last Known Good 与清理入口 |

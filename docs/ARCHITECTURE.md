@@ -61,7 +61,7 @@ foo_crate.dll
 - 生成设备能力矩阵，而不是只按显示名称猜型号；
 - 提供受约束的文件系统访问；
 - 监测设备在长操作中是否仍是同一台、同一次挂载；
-- 只在没有活动事务时执行安全弹出。
+- 在操作完成、失败或安全取消后 Flush 并释放全部设备句柄；不提供系统弹出，由用户使用 Windows 资源管理器。
 
 它依赖 Windows 存储/卷 API 和抽象文件系统接口，但不依赖 foobar2000 或 UI。
 
@@ -85,6 +85,7 @@ Reader、领域模型、Writer 和 Validator 分开。UI 不接触原始数据�
 - 接收与 foobar 无关的规范化导入描述；
 - 检查 codec、container、profile、时长、大小和目标设备能力；
 - 映射标题、艺术家、专辑、排序、碟号、曲号等元数据；
+- 读取原始 Album Artist/Artist/Compilation，并按批准规则合并导入批次、设备现有记录和无歧义的 foobar 曲库证据推断 Compilation；
 - 计算或转换 SoundCheck；
 - 为 Classic 提取准确 gapless 信息；
 - 准备封面与 Audiobook 属性；
@@ -186,7 +187,7 @@ Windows volume event
 ```text
 UI 拖入或发送曲目
 → foobar 适配层取得 metadb、文件信息和封面
-→ media 规范化并检查格式/SoundCheck/gapless/Audiobook
+→ media 规范化并检查格式/Compilation/SoundCheck/gapless/Audiobook
 → transaction 生成 OperationPlan
 → UI 展示空间、重复、警告和目标
 → 用户确认或直接执行无争议计划
