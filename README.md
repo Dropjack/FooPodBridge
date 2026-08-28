@@ -9,7 +9,7 @@ FooPodBridge 是面向 Windows x64、foobar2000 2.x 和磁盘模式 click-wheel 
 - `FooPodBridge` 提供独立 C++ Core、foobar2000 服务接口、Columns UI Device Panel 和简化 Default UI Element；
 - `FooCrate` 通过稳定服务接口提供优先维护的 FooCrate 风格 Devices 界面，不复制设备与数据库逻辑。
 
-项目目前处于产品规格核对阶段，尚未建立 C++ 工程。继续工作请从 [`tasks/README.md`](tasks/README.md) 开始。
+项目目标、产品决定和任务路线已经批准，当前进入参考源码与许可证审计，尚未建立 C++ 工程。继续工作请从 [`tasks/README.md`](tasks/README.md) 开始。
 
 ## 工作区边界
 

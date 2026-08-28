@@ -1,8 +1,10 @@
 # FooPodBridge UI 方向
 
 - 状态：信息结构方向已批准，详细视觉与交互等待对应 UI 任务
-- 日期：2026-08-26
+- 日期：2026-08-28
 - 产品总规格：[`PRODUCT_SPEC.md`](PRODUCT_SPEC.md)
+
+首版用户可见文案与当前 FooCrate 一致使用英文；中文用于规格、程序逻辑、错误语义和用户沟通记录。
 
 ## 1. 三个入口
 
@@ -31,11 +33,11 @@ Devices
 
 ### 独立 Columns UI Device Panel
 
-面向不用 FooCrate 的 Columns UI 布局。它必须使用同一 FooPodBridge 服务，不维护第二套设备状态。功能范围由 `DEC-UI-005` 冻结；视觉遵循 Columns UI 主题而不是复制完整 FooCrate 外壳。
+面向不用 FooCrate 的 Columns UI 布局。它必须使用同一 FooPodBridge 服务，不维护第二套设备状态。功能与 FooCrate 等价，所有危险操作和 Smart Playlist 编辑均可达；布局与视觉遵循更通用的 Columns UI 主题，而不是复制完整 FooCrate 外壳。
 
 ### Default UI Element
 
-使用 Default UI 原生、简洁的列表和命令外观。功能范围由 `DEC-UI-006` 冻结。简化视觉不允许简化事务、安全提示或错误结果。
+使用 Default UI 原生、简洁的列表和命令外观，提供设备概览、Library/playlist 浏览、导入、删除和进度。复杂 Smart Playlist 编辑通过三个入口共享的统一管理对话框打开。简化视觉不允许简化事务、安全提示或错误结果，任何入口都不提供 Eject。
 
 ## 2. 共享状态
 

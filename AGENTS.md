@@ -42,8 +42,8 @@ Before inspecting, inferring from, or modifying this repository:
 Do not assume CMake or CTest is on `PATH`. Use the Visual Studio bundled executables:
 
 ```powershell
-$CMake = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe'
-$CTest = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\ctest.exe'
+$CMake = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe'
+$CTest = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\ctest.exe'
 ```
 
 If either path does not exist, report the environment mismatch and consult the approved development setup task; do not fall back to bare `cmake` or `ctest`.

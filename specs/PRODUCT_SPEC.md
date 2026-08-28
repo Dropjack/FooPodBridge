@@ -1,8 +1,8 @@
 # FooPodBridge 产品总规格
 
-- 状态：规格核对中
+- 状态：已批准基线
 - 版本：0.1
-- 日期：2026-08-26
+- 日期：2026-08-28
 - 产品目标：[`../docs/PRODUCT_GOAL.md`](../docs/PRODUCT_GOAL.md)
 - 架构：[`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
 - 安全模型：[`../docs/SAFETY_MODEL.md`](../docs/SAFETY_MODEL.md)
@@ -236,7 +236,9 @@ Rating 规则使用设备原生 Rating，而不是在设备端执行 foobar 查�
 - 发出同一高层 Operation Request；
 - 显示同一预检、进度、警告、失败和恢复语义；
 - 不允许独立 UI 绕过服务层设备支持判断；
-- 视觉和功能可达范围分别由 `DEC-UI-005/006` 冻结。
+- 独立 Columns UI 功能与 FooCrate 等价，采用更通用的 Columns UI 布局和视觉，所有危险操作与 Smart Playlist 编辑均可达；
+- Default UI 提供设备概览、Library/playlist 浏览、导入、删除和进度，复杂 Smart Playlist 编辑通过共享管理对话框打开；
+- 所有入口均不提供 Eject。
 
 ## 18. Preferences 与诊断
 
@@ -250,6 +252,8 @@ Preferences 至少承载：
 - 恢复默认和版本迁移。
 
 设置使用稳定 GUID、版本、合法值校验和迁移。不能靠修改隐藏配置绕过 Unsupported 写入。
+
+诊断日志必须本地有界并默认遮蔽设备序列号和用户路径。诊断包只由用户主动导出，导出后可以预览，再由用户决定是否分享。
 
 ## 19. 性能与响应
 
@@ -289,7 +293,9 @@ FooCrate、独立 Columns UI 和 Default UI 分别完成其批准范围的日常
 
 ## 22. 当前批准门槛
 
-本规格只有在以下条件满足后才能从“规格核对中”改为“可实现”：
+以下门槛已于 2026-08-28 满足，本规格成为任务 001 以后使用的已批准基线。后续实机证据或任务级发现可以显式重开受影响决定，但不能静默改变本规格。
+
+本规格的批准条件为：
 
 - 用户完成当前路线所需的 `USER_DECISIONS.md`；
 - 用户批准 `tasks/TODO.md` 的永久任务拆分；
