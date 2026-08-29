@@ -56,15 +56,15 @@
 ## 6. 测试与 foobar2000 边界
 
 - 纯 Core 单元测试、数据库 fixture、格式往返和故障注入从 FooPodBridge 构建目录运行，不需要启动 foobar2000。
-- 真实组件加载、两组件通信、自动化、诊断和冒烟测试只使用 `D:\Dev\FooCrate\.local\foobar-dev`。
-- 用户的干净安装、升级、回退和多场景验收只使用 `D:\Dev\FooCrate\.local\foobar-test`。
+- 真实组件加载、两组件通信、自动化、诊断和冒烟测试只使用 `D:\dev\foo\FooCrate\.local\foobar-dev`。
+- 用户的干净安装、升级、回退和多场景验收只使用 `D:\dev\foo\FooCrate\.local\foobar-test`。
 - 不在 FooPodBridge 建立第三套 foobar2000，不接触 `D:\Dev\foobar2000` 参考实例，也绝不接触 C 盘日常安装。
 - Codex 可以按已批准任务自动部署开发构建到 `foobar-dev`；交给用户的候选包由用户手动导入 `foobar-test`。
 - 实机测试分设备、分任务授权；自动测试默认使用脱敏 fixture、临时目录和故障注入，不默认写入已连接设备。
 
 ## 7. 参考资料、许可证与来源
 
-- `D:\Dev\FooPodBridge\Ref` 永久只读，不在其中编辑、格式化、生成、构建或清理文件。
+- `D:\dev\foo\FooPodBridge\Ref` 永久只读，不在其中编辑、格式化、生成、构建或清理文件。
 - 任何从 foo_dop 或 libgpod 采用的源码级实现必须在 `docs/REFERENCE_PROVENANCE.md` 记录文件、用途、许可证和修改方式。
 - 可以理解并重新设计数据格式与算法，但不能把不明来源的二进制当作正式依赖。
 - `Ref\ipod_manager\MobileDeviceSign\iTunesCrypt.dll` 是 x86、未签名且来源/单独授权不明确的参考二进制。正式组件禁止加载、复制、打包或发布它。
@@ -118,9 +118,9 @@
 
 ## 12. 当前工作区
 
-- 正式项目：`D:\Dev\FooPodBridge\FooPodBridge`
-- 只读参考：`D:\Dev\FooPodBridge\Ref`
-- FooCrate 集成：`D:\Dev\FooCrate`
-- AI 开发实例：`D:\Dev\FooCrate\.local\foobar-dev`
-- 用户验收实例：`D:\Dev\FooCrate\.local\foobar-test`
+- 正式项目：`D:\dev\foo\FooPodBridge\FooPodBridge`
+- 只读参考：`D:\dev\foo\FooPodBridge\Ref`
+- FooCrate 集成：`D:\dev\foo\FooCrate`
+- AI 开发实例：`D:\dev\foo\FooCrate\.local\foobar-dev`
+- 用户验收实例：`D:\dev\foo\FooCrate\.local\foobar-test`
 - 日常 foobar2000：C 盘，严格禁止触碰

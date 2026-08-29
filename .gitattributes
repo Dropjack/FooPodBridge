@@ -1,5 +1,8 @@
 * text=auto eol=lf
 
+# Preserve the official SDK archive's original bytes and line endings.
+third_party/** -text
+
 *.png binary
 *.jpg binary
 *.jpeg binary

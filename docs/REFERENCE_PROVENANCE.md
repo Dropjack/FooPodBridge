@@ -3,7 +3,7 @@
 - 状态：任务 001 已验收
 - 审计日期：2026-08-28
 - 本次实际只读参考根：`D:\dev\foo\FooPodBridge\Ref`
-- 项目文档中的规范参考根：`D:\Dev\FooPodBridge\Ref`（当前机器实际路径多一层 `foo`，本任务未改动规范路径）
+- 项目参考根：`D:\dev\foo\FooPodBridge\Ref`
 - 详细证据：[`../tasks/001-完成参考源码与许可证审计/AUDIT_EVIDENCE.md`](../tasks/001-完成参考源码与许可证审计/AUDIT_EVIDENCE.md)
 
 ## 1. 最终审计结论
@@ -93,7 +93,7 @@ hash58 文件调用 GLib `GChecksum` 只是实现依赖，不改变其独立 BSD
 | Columns UI SDK commit `2ac32c0…` | 任务 016 的独立 panel/toolbar 适配层 | 不复制旧 `panel.cpp`；不进入 Core/FooCrate | `0BSD` 无保留条件；仍在第三方清单记录版本和来源 |
 | dop-sdk | 无正式用途 | 不采用旧 GUID/API | 不进入源码和包，因此没有分发义务 |
 
-官方 foobar2000 SDK 包已固定版本和 SHA-256，但当前环境缺少支持 LZMA 的解包器，未能从官方 `.7z` 内逐字节提取 `sdk-license.txt`。许可正文由 `Ref` 的旧官方 SDK文件与 2025 年维护镜像同文交叉确认；任务 002 在首次构建前必须用可用的 7-Zip 再核对官方包内许可，若正文不同则停下并重开本审计。
+官方 foobar2000 SDK 包已固定版本和 SHA-256。2026-08-29，用户把官方 `.7z` 与解压目录放入仓库外的本地 staging；包 SHA-256 为 `CCDA3C5840E66E0E28A7E4FE36407C4E78581AA30C40C362A188FCBAAE799A3E`，与任务 001 固定值完全一致。WinRAR 7.13 对压缩包执行只读完整性测试返回 0；解压目录包含 674 个文件和全部必要 SDK 入口。官方 `sdk-license.txt` SHA-256 为 `2AA8AF2F2A0CCE2DCE4C2A4F422BCBD1752DAB7D1E1B973981B77C971B0B8A32`，与 FooCrate 当前官方 SDK 副本逐字节一致，许可证结论无需重开。
 
 ## 4. 任务 002–014 采用边界
 
@@ -143,7 +143,7 @@ foo_dop、libgpod 的 LGPL 数据库/artwork/device 文件因为没有复制，�
 - iTunesDB：任务 003/004 用两类脱敏 fixture 证明未知字段保留、损坏拒绝和无修改往返；
 - gapless：任务 009 使用 MP3/AAC 连续曲目和编码器元数据验证，扫描失败不得写 dummy；
 - Smart Playlist：任务 014 只把实机验证过的 Photo/Classic 规则组合标记为 Live；
-- SDK：任务 002 用支持 LZMA 的 7-Zip 复核官方 `SDK-2025-03-07.7z` 内的 `sdk-license.txt`；
+- SDK：官方 `SDK-2025-03-07.7z` 的包哈希、WinRAR 完整性测试、必要文件和包内 `sdk-license.txt` 已于任务 002 复核通过；
 - 设备能力与 artwork：任务 005/012 以只读设备证据和脱敏 fixture 校正历史型号表，历史源码不能单独证明支持。
 
 ## 8. 审计规则

@@ -16,7 +16,7 @@ FooPodBridge 计划使用 `LGPL-3.0-or-later`，FooCrate 保持 MIT，但这个�
 
 ## 3. 输入与边界
 
-- 只读参考根：`D:\Dev\FooPodBridge\Ref`；永不修改、格式化、构建或清理；
+- 只读参考根：`D:\dev\foo\FooPodBridge\Ref`；永不修改、格式化、构建或清理；
 - 上游项目的官方仓库、具体 commit/tag、许可证全文和文件版权头；
 - [`REFERENCE_PROVENANCE.md`](../../docs/REFERENCE_PROVENANCE.md) 的现有初步记录；
 - [`USER_DECISIONS.md`](../../decisions/USER_DECISIONS.md) 的 `DEC-LIC-001`；
@@ -86,7 +86,7 @@ FooPodBridge 计划使用 `LGPL-3.0-or-later`，FooCrate 保持 MIT，但这个�
 3. FooPodBridge/FooCrate 共享服务合同使用原创 `0BSD`，FooCrate 保持 MIT；
 4. foo_dop 和 libgpod 其余候选源码只作知识参考后原创实现，`iTunesCrypt.dll`、旧 SDK、iOS、hash72/CBK 路径保持禁止。
 
-本任务因此标记为“已验收”。任务 002 首次构建前仍必须用支持 LZMA 的 7-Zip 复核官方 foobar2000 SDK 包内 `sdk-license.txt`；如果正文与本审计的交叉证据不同，立即重开任务 001。
+本任务因此标记为“已验收”。原定由任务 002 补做的官方 foobar2000 SDK 包内 `sdk-license.txt` 复核已于 2026-08-29 完成，正文与本审计结论一致，不需要重开任务 001。
 
 ## 10. 审计结果
 
@@ -107,3 +107,4 @@ FooPodBridge 计划使用 `LGPL-3.0-or-later`，FooCrate 保持 MIT，但这个�
 - 审计没有创建或修改 C++、CMake、组件包、foobar2000 实例、FooCrate 或真实设备；
 - Markdown 本地链接、严格 UTF-8 无 BOM、LF 和来源矩阵完整性检查在本轮交付前执行。
 - 2026-08-28：用户确认 FooPodBridge `LGPL-3.0-or-later`、hash58 `BSD-3-Clause`、原创共享合同 `0BSD`、FooCrate MIT，以及其余源码只参考/禁止边界；任务 001 验收通过。
+- 2026-08-29：任务 002 使用用户提供的官方包与解压目录补做许可复核；包哈希匹配、WinRAR 完整性测试通过，官方许可与 FooCrate 的 2025 SDK 副本逐字节一致。

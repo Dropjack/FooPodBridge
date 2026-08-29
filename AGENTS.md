@@ -25,15 +25,15 @@ Before inspecting, inferring from, or modifying this repository:
 
 # Repository and reference boundaries
 
-- The formal project is this directory: `D:\Dev\FooPodBridge\FooPodBridge`.
-- The sibling directory `D:\Dev\FooPodBridge\Ref` is read-only reference material. Never modify, format, build into, or clean it.
-- `D:\Dev\FooCrate` is a separate repository and the integration/test workspace. Protect its existing changes and follow its own `AGENTS.md` before touching it.
+- The formal project is this directory: `D:\dev\foo\FooPodBridge\FooPodBridge`.
+- The sibling directory `D:\dev\foo\FooPodBridge\Ref` is read-only reference material. Never modify, format, build into, or clean it.
+- `D:\dev\foo\FooCrate` is a separate repository and the integration/test workspace. Protect its existing changes and follow its own `AGENTS.md` before touching it.
 - Never access, install into, launch, or modify the user's daily foobar2000 installation on drive C:.
 
 # Local foobar2000 test instances
 
-- Codex/AI development deployment, automation, diagnostics, and smoke tests may use only `D:\Dev\FooCrate\.local\foobar-dev`.
-- User acceptance, clean install, upgrade, rollback, and multi-scenario testing use only `D:\Dev\FooCrate\.local\foobar-test`.
+- Codex/AI development deployment, automation, diagnostics, and smoke tests may use only `D:\dev\foo\FooCrate\.local\foobar-dev`.
+- User acceptance, clean install, upgrade, rollback, and multi-scenario testing use only `D:\dev\foo\FooCrate\.local\foobar-test`.
 - Do not create a third foobar2000 installation under FooPodBridge.
 - A task must explicitly authorize real iPod writes. UI automation, discovery tests, or read-only tests never imply permission to modify an attached device.
 

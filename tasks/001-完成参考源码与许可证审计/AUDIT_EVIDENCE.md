@@ -83,7 +83,7 @@
 2. curl 加 `--ssl-no-revoke` 后没有返回可验证输出；
 3. .NET HTTPS 下载成功并确认包哈希，但 `bsdtar 3.5.2` 报 `LZMA codec is unsupported`，无法提取 `sdk-license.txt`。
 
-继续该精确检查需要可用的 7-Zip，或用户提供从官方包解出的 `sdk-license.txt`。任务 002 首次构建前必须补做；本任务不再重试相同环境条件。
+当时继续该精确检查需要可用的 LZMA 解包器，或用户提供从官方包解出的 `sdk-license.txt`，因此按三次上限转交任务 002。该阻断已于 2026-08-29 解除：用户提供官方包和完整解压目录，包哈希匹配；WinRAR 7.13 只读完整性测试返回 0；包内 `sdk-license.txt` SHA-256 为 `2AA8AF2F2A0CCE2DCE4C2A4F422BCBD1752DAB7D1E1B973981B77C971B0B8A32`，与 FooCrate 当前官方 SDK 副本逐字节一致。
 
 ## 4. 禁止二进制证据
 
