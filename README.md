@@ -26,6 +26,7 @@ FooPodBridge 本身是独立组件，FooCrate 不是安装或运行依赖。项�
 - [项目规则](docs/PROJECT_RULES.md)
 - [产品目标](docs/PRODUCT_GOAL.md)
 - [正式架构](docs/ARCHITECTURE.md)
+- [FooCrate 外部消费者验证记录](docs/FOOCRATE_CONSUMER_VALIDATION.md)
 - [设备写入安全模型](docs/SAFETY_MODEL.md)
 - [产品总规格](specs/PRODUCT_SPEC.md)
 - [需要用户决定的事项](decisions/USER_DECISIONS.md)

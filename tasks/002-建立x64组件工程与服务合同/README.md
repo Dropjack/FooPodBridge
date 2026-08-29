@@ -95,7 +95,7 @@
 ### 步骤 2：冻结身份、合同与测试
 
 - 输入：已批准架构、`0BSD` 合同边界和现代 SDK；
-- 动作：先写合同/身份测试，再实现公开头、GUID、组件服务和 FooCrate 编译消费者；
+- 动作：先写合同/身份测试，再实现公开头、GUID、组件服务，并用临时 FooCrate 外部消费者验证独立可编译性；
 - 产物：不可变 v1 ABI 与缺失/兼容/不兼容状态测试；
 - 通过标准：没有 STL/Core 私有类型越过 DLL，FooCrate 缺失服务时仍可编译并安全降级。
 
@@ -128,7 +128,7 @@
 - 组件名、DLL 名、SemVer、Windows FileVersion、组件 GUID 与服务 GUID 自动锁定；
 - v1 接口签名/布局守卫、GUID 唯一性和 major/minor 兼容矩阵测试；
 - Core include/link 依赖扫描，禁止 foobar/Columns UI/FooCrate；
-- FooCrate 编译消费者覆盖服务缺失、v1 可用与 major 不兼容；
+- [FooCrate 外部消费者验证](../../docs/FOOCRATE_CONSUMER_VALIDATION.md)覆盖服务缺失、v1 可用与 major 不兼容；验证夹具不作为 FooCrate 永久依赖；
 - PE machine 为 AMD64，禁止导入 `iTunesCrypt`/Apple Mobile Device，禁止 x86 产物；
 - 组件包条目白名单、DLL 哈希一致性、许可证与第三方声明存在；
 - 部署脚本目标路径保护测试；
@@ -204,7 +204,7 @@ Build Tools 和官方 SDK 许可证门槛均已解除，不需要安装新的系
 - 包审计确认仅含 `foo_pod_bridge.dll`、`LICENSE.txt`、`THIRD_PARTY_NOTICES.txt`；DLL 为 AMD64，ProductVersion 为 `0.1.0-beta.1`，包内/Release DLL SHA-256 均为 `881B74A31A1E5A3FB703F8D5DD6A4CA0B86D6DB0D63B8BBECD3E32668352C32E`，包 SHA-256 为 `4C204B6F13E35B5512ACE60ADF7E0AF13633C806EA3DBBFD5F37CBF8FEB3810A`；导入表与字符串扫描不含禁用 Apple/`iTunesCrypt` 依赖。
 - 部署验证第一次发现仓库台账仍写不存在的旧根 `D:\Dev\FooCrate`；只读证明实际工作区为 `D:\dev\foo\FooCrate` 后同步规则和白名单，第二次验证通过。Release DLL 仅部署到 `foobar-dev`，隐藏加载烟测确认进程从准确目录加载 `foo_pod_bridge.dll`，并通过 foobar2000 自身 `/exit` 正常退出。
 
-FooCrate 编译消费者检查开始前，已严格读取其仓库规则和当前任务；工作区起初 clean 且 `main` 与 `origin/main` 一致。其 Community CMake/CTest 台账已失效，实际 Build Tools 17.14.37、CMake/CTest 3.31.6-msvc6 和 Ninja 均经文件证据复核，相关规则与开发设置已同步；未安装新工具。
+FooCrate 编译消费者检查开始前，已严格读取其仓库规则和当前任务；工作区起初 clean 且 `main` 与 `origin/main` 一致。其 Community CMake/CTest 台账已失效，实际 Build Tools 17.14.37、CMake/CTest 3.31.6-msvc6 和 Ninja 均经文件证据复核；未安装新工具。验证所需的临时路径记录没有保留到 FooCrate 公共仓库。
 
 当前阻断是复制 0BSD 服务合同快照的同一操作达到三次失败上限：
 
@@ -219,12 +219,13 @@ FooCrate 编译消费者检查开始前，已严格读取其仓库规则和当�
 2026-08-29，用户已给出上述明确授权，第三轮阻断现已解除：
 
 - 精确移除 FooCrate 三份快照各自多出的一个末尾 LF 后，头文件、GUID 定义和 0BSD 许可证与 FooPodBridge 来源逐字节一致；SHA-256 分别为 `A39D48C57E53C6C2AA2BE8E75738DFDB76DF88CCC9E0D9D1DD96772090F03DC6`、`C5B4AB4B9B4044930A725DD1CAB0061AD8ADF77826A9171C11EB49CA785F06E0` 和 `D734C241CFF10A35242A1BF8320C85B1CEAA04DDB935496608198700A7C02EEE`。
-- FooCrate 新增的独立测试目标只编译合同消费者和 GUID 定义，不链接进现有 `foo_crate.dll`；CMake 配置阶段会用上述哈希拒绝快照静默漂移。
+- 临时 FooCrate 独立测试目标只编译合同消费者和 GUID 定义，不链接进现有 `foo_crate.dll`；CMake 配置阶段用上述哈希拒绝快照静默漂移。
 - FooCrate 原 preset 构建目录含来自 `D:\Dev\Refrain` 的旧缓存，因此保留不动，改用隔离目录 `build/foopodbridge-contract`。配置前两次分别被旧缓存与进程环境重复的 `Path`/`PATH` 阻断；第三次以大小写无关去重后的子进程环境配置成功。
 - Debug 构建第一次因外层日志管道超时而没有形成可验证产物；第二次明确发现新增测试目标缺少 `/EHsc`，在 `/WX` 下触发标准库 C4530；补齐开关后第三次构建成功。Debug CTest `foopodbridge_contract_consumer` 通过 1/1。
 - Release 第一次构建成功，Release CTest 同一测试通过 1/1。测试覆盖 ABI 1.0 常量、入口服务 GUID、服务缺失、兼容 v1 和未来 major 不兼容；后两种不可用状态都明确隐藏设备 UI。
 - 本轮没有构建、覆盖、打包或部署 `foo_crate.dll`，没有新增网络或设备代码，也没有访问设备、`foobar-test` 或 C 盘日常安装。
 - 最终 `foobar-dev` 隐藏烟测在同一进程中从批准的 `profile/user-components-x64` 目录同时观察到 `foo_pod_bridge.dll` 与现有 `foo_crate.dll`；没有模块读取错误，并通过 foobar2000 自身 `/exit` 正常退出。
+- 用户随后决定不把提前验证用的合同快照和测试推入公共 FooCrate 仓库。未推送的 FooCrate 本地提交已销毁，仓库精确恢复到其 `origin/main`；完整验证方法、哈希与结果改由 [`docs/FOOCRATE_CONSUMER_VALIDATION.md`](../../docs/FOOCRATE_CONSUMER_VALIDATION.md)永久保存。该清理不改变已经取得的构建/共存证据，也进一步明确 FooCrate 只是可选消费者。
 
 任务 002 的自动实现门槛现已全部通过，状态转为“实现完成待验收”。下一步只由用户在 `foobar-test` 手动导入候选并完成第 6 节步骤 5；未授权自动部署到该实例。
 
