@@ -7,15 +7,16 @@
 3. 本文件；
 4. [`TODO.md`](TODO.md)；
 5. 下方当前任务；
-6. 当前任务链接的规格、决策和参考证据。
+6. 当前任务链接的规格、决策和参考证据；
+7. 当前任务在 [`../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md`](../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md) 中映射的章节。无需重新通读整个 `Ref\ipod_manager`，只有追证据时才打开蓝图列出的固定源码位置。
 
 ## 当前进度
 
-- 当前任务：[`003-实现 iPod Photo 数据库往返核心`](003-实现iPodPhoto数据库往返核心/README.md)
+- 当前任务：[`003-实现传统 iTunesDB 共同往返核心`](003-实现iPodPhoto数据库往返核心/README.md)
 - 状态：规格核对中
-- 当前阶段：已确认“共同往返核心 + 数据库格式配置 + 设备能力配置 + 分级验证”的扩展方向；正式写入仍只对白名单中的实机开放
-- 当前下一步：核对脱敏 Photo fixture 的来源、隐私处理、结构证据和自动比较标准；未获新授权前不实现、不构建、不访问实机
-- 当前禁止：不创建假设备或空 UI，不访问实机、`foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读
+- 当前阶段：2026-09-08 已完成 Nano 4 纯净 Windows 只读基线、完整外部备份和私有 fixture；已建立 iTunes Restore → 默认磁盘使用 → 必要时启用磁盘使用 → 纯净 Windows 复测的跨会话交接任务
+- 当前下一步：用户按 [`Nano 4 iTunes Restore 交接任务`](../docs/device-evidence/NANO4_ITUNES_RESTORE_HANDOFF.md) 在家执行 Restore，Codex 只读采集 Restore 后 fixture；随后按蓝图 `BP-DB-*` 与 `BP-FMT-002/003` 冻结共同核心并等待实现授权
+- 当前禁止：不创建假设备或空 UI；不手工修改 Nano 4，不访问 `foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读
 
 ## 状态定义
 
@@ -38,13 +39,13 @@
 | 000 | [确定项目目标与全部产品决策](000-确定项目目标与全部产品决策/README.md) | 已验收 | 产品规格、决策、设备证据计划、批准路线 |
 | 001 | [完成参考源码与许可证审计](001-完成参考源码与许可证审计/README.md) | 已验收 | 文件级来源矩阵、许可证与允许复用边界 |
 | 002 | [建立 x64 组件工程与服务合同](002-建立x64组件工程与服务合同/README.md) | 已验收 | 可安装组件、Core targets、版本化服务 ABI、包审计 |
-| 003 | [实现 iPod Photo 数据库往返核心](003-实现iPodPhoto数据库往返核心/README.md) | 规格核对中 | 共同往返核心、Photo 格式配置与脱敏 fixture |
-| 004 | 实现 iPod Classic 数据库与 hash58 核心 | 待讨论 | Classic reader/writer/hash58 已知向量和完整往返 |
+| 003 | [实现传统 iTunesDB 共同往返核心](003-实现iPodPhoto数据库往返核心/README.md) | 规格核对中 | Reader/Model/Writer/Validator、未签名 profile、Nano 4 私有 fixture 的共同记录输入 |
+| 004 | 实现 6G/hash58 与 Nano 4 格式核心 | 待讨论 | Classic/Nano 3/4 签名 profile、hash58 向量和 Nano 4 fixture 往返 |
 | 005 | 实现 Windows 设备发现与只读服务 | 待讨论 | 设备身份、能力矩阵、Library 快照、热插拔生命周期 |
 | 006 | 实现 FooCrate 只读 Devices 工作区 | 待讨论 | 使用真实服务数据的首个 FooCrate 设备 UI |
 | 007 | 实现设备事务、备份与故障恢复核心 | 待讨论 | 文件系统故障注入、Operation Plan、恢复状态机 |
-| 008 | 完成 iPod Photo 手动 Music 导入 | 待讨论 | Photo 上完整、安全、可取消的直接音乐导入纵向能力 |
-| 009 | 完成 iPod Classic 手动 Music 导入 | 待讨论 | Classic hash58、gapless 与实机数据库接受纵向能力 |
+| 008 | 完成 Nano 4 实验性 Music 导入 | 待讨论 | 备份、加一首、删除、重启播放和恢复的第一条实机纵向能力 |
+| 009 | 扩展 Photo/Classic 等家族实机验收 | 待讨论 | 可用设备按验证等级补充，Classic 增加准确 gapless |
 | 010 | 完成设备曲目删除与孤立资源清理 | 待讨论 | 两种删除语义、DB-first 删除、已批准清理策略 |
 | 011 | 完成普通设备播放列表管理 | 待讨论 | 新建/编辑/删除/排序、foobar playlist 手动发送 |
 | 012 | 完成 Music artwork 管理 | 待讨论 | Photo/Classic 封面格式、共享引用与安全清理 |

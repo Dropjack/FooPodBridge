@@ -2,7 +2,7 @@
 
 - 状态：已批准基线
 - 版本：0.1
-- 日期：2026-08-28
+- 日期：2026-09-08
 - 产品目标：[`../docs/PRODUCT_GOAL.md`](../docs/PRODUCT_GOAL.md)
 - 架构：[`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
 - 安全模型：[`../docs/SAFETY_MODEL.md`](../docs/SAFETY_MODEL.md)
@@ -28,23 +28,29 @@ FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为磁盘模式 clic
 - 当前验证基线为 foobar2000 2.25.10 stable 与 Columns UI 3.5.0；
 - FooPodBridge 以 `FooPodBridge-<version>.fb2k-component` 安装；
 - FooCrate 是另一个组件，通过 FooPodBridge 服务连接，不捆绑或自动安装 FooPodBridge；
-- FooPodBridge 不要求安装 iTunes、Apple Music 或 Apple Mobile Device Support 才能管理 Photo/Classic；
+- FooPodBridge 不要求安装 iTunes、Apple Music 或 Apple Mobile Device Support 才能发现和管理已经由 Windows 暴露为受支持文件系统卷、且本项目已具备所需设备属性和签名能力的 click-wheel iPod；
 - 组件包不得包含 foobar2000、Apple DLL、x86 `iTunesCrypt.dll`、用户数据库或未经许可二进制。
 
 ## 3. 支持设备
 
-### 正式可写
+### 验证等级
 
-- 用户实机验证的 iPod Photo；
-- 用户实机验证的 iPod Classic。
+- `StructureKnown`：固定历史来源能说明数据库家族和目标行为；
+- `FixtureRoundTrip`：本项目脱敏或私有 fixture 已通过 Reader/Writer/Validator 往返；
+- `DeviceReadVerified`：指定实机已在目标 Windows 环境完成只读识别与 Library 核对；
+- `DeviceWriteVerified`：指定实机在外部备份、事务、重启播放和恢复门槛下完成写入验收。
 
-允许写入不是按产品名称字符串决定，而是按物理设备身份、固件、数据库类型、文件系统和能力矩阵共同决定。每台设备第一次写入前必须完成 `EVID-DEV-001/002`。
+只有 `DeviceWriteVerified` 可以宣传为“已验证可写”。参考支持但尚未达到第四级的已识别型号可以显示 Experimental；是否允许一次受控实验写入由活动设备任务决定，不存在面向任意未知设备的通用强制写入开关。
 
-### 非正式设备
+允许写入不是按产品名称字符串决定，而是按物理设备身份、固件、数据库类型、文件系统、签名输入、能力矩阵和活动任务共同决定。每台设备第一次写入前必须完成对应 `EVID-DEV-*`。
 
-- 其他 click-wheel 型号可以被发现并显示 Unsupported；
-- 没有实机与完整能力证据时不能切换为 Writable；
-- 不支持 iPhone、iPod touch、Apple Mobile Device、Nano 5 hash72/CBK 或现代 iOS 数据库路径。
+当前数据库家族边界：
+
+- 传统未签名 `iTunesDB`：Photo、Mini、较早 click-wheel 与 Nano 1/2 等候选型号，按证据逐项建立 profile；
+- 签名传统 `iTunesDB`：Classic、Nano 3/4 等候选型号，共享 6G 记录骨架与 hash58，但型号能力仍分开验证；
+- Shuffle：`iTunesSD`/ShadowDB 独立路线；
+- Nano 5 及以后涉及 `iTunesCDB`、SQLite、hash72/CBK 的路径暂不进入当前实现；
+- iPhone、iPod touch、Apple Mobile Device 和现代 iOS 数据库路径不支持。
 
 ## 4. 设备发现与概览
 
@@ -184,7 +190,7 @@ Compilation 明确标签优先；没有明确值时，使用规范化的原始 A
 
 Smart Playlist 成员完全由规则计算，不接受手工拖入曲目。foobar autoplaylist 对象不能发送、拖入、快照或翻译；用户仍可选择其中曲目执行普通导入或加入普通设备 playlist。只有实机确认的规则组合显示 Live Updating；可保存但不能实时重算的规则明确标记 Refresh on next connection 并由用户主动刷新；不支持规则拒绝保存。
 
-Rating 规则使用设备原生 Rating，而不是在设备端执行 foobar 查询。首要用户场景包括 `Rating = 2/3/4/5`，以及设备能力允许时的 `Rating = N AND Artist = value`；Photo/Classic 对字段、运算符和 Live Updating 的准确支持仍须通过任务 014 的数据库往返与实机验证冻结。
+Rating 规则使用设备原生 Rating，而不是在设备端执行 foobar 查询。首要用户场景包括 `Rating = 2/3/4/5`，以及设备能力允许时的 `Rating = N AND Artist = value`；每个目标型号对字段、运算符和 Live Updating 的准确支持仍须通过任务 014 的数据库往返与实机验证冻结。
 
 ## 14. 删除
 
@@ -276,11 +282,11 @@ Preferences 至少承载：
 
 ## 21. 首个完整版本验收
 
-两台设备分别完成：
+每个声明 `DeviceWriteVerified` 的数据库家族至少选择一台代表设备完成：
 
 1. 识别、读取 Library、普通 playlist、Smart Playlist、容量和 artwork；
 2. 导入一批 MP3/AAC，并验证 SoundCheck；
-3. Classic 使用连续专辑验证 gapless；
+3. 声明 Classic gapless 能力时，必须在 Classic 上使用连续专辑单独验证；
 4. 导入 Audiobook 并验证续播/随机播放排除；
 5. 新建、编辑、重排和删除普通 playlist；
 6. 新建并验证至少一组多规则 Smart Playlist；

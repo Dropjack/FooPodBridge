@@ -2,7 +2,7 @@
 
 FooPodBridge 是面向 Windows x64、foobar2000 2.x 和磁盘模式 click-wheel iPod 的原生设备管理组件。项目建立全新的 x64 架构，只把 `foo_dop / iPod manager` 作为数据库知识和可观察行为参考，不移植其旧 x86、iOS 或历史 UI 结构。
 
-当前正式目标优先服务并验证项目维护者实际拥有的两台设备：iPod Photo 与 iPod Classic。未识别或未经实机验证的型号不允许写入。
+当前目标按数据库家族实现、按证据等级验证 click-wheel iPod。Nano 4 是首台可牺牲实验机；Photo、Classic 和其他历史支持型号按 `StructureKnown / FixtureRoundTrip / DeviceReadVerified / DeviceWriteVerified` 分级，不把参考支持冒充实机验证，未知设备始终拒绝写入。
 
 FooPodBridge 本身是独立组件，FooCrate 不是安装或运行依赖。项目最终提供三种可选界面适配器：
 
@@ -26,6 +26,7 @@ FooPodBridge 本身是独立组件，FooCrate 不是安装或运行依赖。项�
 - [项目规则](docs/PROJECT_RULES.md)
 - [产品目标](docs/PRODUCT_GOAL.md)
 - [正式架构](docs/ARCHITECTURE.md)
+- [iPod manager 中文实现蓝图与学习路径](docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md)
 - [FooCrate 外部消费者验证记录](docs/FOOCRATE_CONSUMER_VALIDATION.md)
 - [设备写入安全模型](docs/SAFETY_MODEL.md)
 - [产品总规格](specs/PRODUCT_SPEC.md)

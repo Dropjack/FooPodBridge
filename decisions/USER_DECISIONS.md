@@ -1,7 +1,7 @@
 # FooPodBridge 用户决策清单
 
 - 状态：当前路线所需决定已批准；明确延后与正式版前重开项保留
-- 日期：2026-08-28
+- 日期：2026-09-08
 - 当前任务：[`../tasks/003-实现iPodPhoto数据库往返核心/README.md`](../tasks/003-实现iPodPhoto数据库往返核心/README.md)
 - 作用：这是影响产品行为、设备数据、UI 或公开发布的唯一决策清单
 
@@ -24,7 +24,7 @@
 | DEC-ARCH-001 | 重建路线 | 建立全新 x64 架构，只从 foo_dop/libgpod 提取已验证知识和许可证兼容算法 |
 | DEC-ARCH-002 | Core 边界 | `device/database/media/transaction` 不依赖 foobar 或 UI，可独立测试 |
 | DEC-ARCH-003 | 组件边界 | FooPodBridge 与 FooCrate 是两个组件，通过版本化 foobar 服务连接 |
-| DEC-DEV-001 | 正式设备 | 优先且只承诺用户实测的 iPod Photo 与 iPod Classic；未知设备拒绝写入 |
+| DEC-DEV-001 | 设备范围与验证 | 按数据库家族实现、按 `StructureKnown / FixtureRoundTrip / DeviceReadVerified / DeviceWriteVerified` 分级；只有第四级宣传“已验证可写”，点名实验机可在独立任务和完整备份门槛下受控写入，未知设备拒绝写入 |
 | DEC-SCOPE-001 | 管理方式 | 纯手动音乐管理，不提供媒体库镜像、后台同步或一键 Sync |
 | DEC-SCOPE-002 | 媒体范围 | Music 与 Audiobooks；排除 Podcasts、Video、Photo、iPhone 和 iPod touch |
 | DEC-SCOPE-003 | 播放数据 | 不双向同步播放次数、评分、跳过次数和播放位置 |
@@ -88,6 +88,17 @@
 要求同上，另需取得 hash58 所需稳定设备 ID，诊断输出必须遮蔽大部分字符。
 
 状态：尚未采集。阻断 Classic 实机写入，不阻断 hash58 已知向量测试。
+
+### EVID-DEV-003：iPod Nano 4 实验机
+
+- 用户自有、明确允许用于破坏性实验的 16 GB iPod Nano 4；
+- 2026-09-08 在未发现 iTunes、Apple Mobile Device、Apple Application Support 或 iPod Windows 服务的 Windows x64 环境中，直接挂载为 FAT32 removable volume；
+- 卷容量约 15.03 GiB，存在 `iPod_Control`、传统未压缩 `iTunesDB`、ArtworkDB 和 204 个现有媒体文件；公开记录不保存卷标、曲名、playlist 名或数据库指纹；
+- 主数据库 `mhbd` 声明长度与实际 308,628 字节一致，header 长 244 字节、数据库版本字段 49、五个顶层 dataset，hash58 区非零；`SysInfo` 为 0 字节且没有 `SysInfoExtended`，稳定设备 ID、固件和签名输入仍需由设备发现任务取得；
+- 完整 `iPod_Control` 已只读复制到 Git 忽略的设备外目录，共 232 个文件、4,166,620,499 字节，并逐文件 SHA-256 验证零差异；Device/iTunes/Artwork 私有 fixture 另存于 Git 忽略目录；
+- 当前只达到“Windows 存储卷与原始结构只读证据”；Reader 尚未实现，不能标记 `DeviceReadVerified`，更不能标记 `DeviceWriteVerified`。
+
+状态：只读采集与外部基线已完成。用户已授权这台物理 Nano 4 作为实验机，但第一次设备写入仍由后续点名任务阻断：必须先完成 fixture 往返、hash58/设备身份、事务故障测试、唯一测试音频和恢复步骤。
 
 ## 4. 第一轮：直接导入
 
@@ -238,7 +249,7 @@
 - B：只要数据库格式能写就全部允许，并一律显示 Live。
 - C：完全禁止非实时规则。
 
-状态：已批准（2026-08-26），采用 A。只有目标设备实机确认支持的规则组合才显示 Live Updating；可保存但不能由设备实时重算的规则明确标记 Refresh on next connection，并由用户主动刷新；不能表达或未经确认的字段/运算符拒绝保存。具体能力矩阵留到参考审计、格式测试和 Photo/Classic 实机验证。
+状态：已批准（2026-08-26），采用 A。只有目标设备实机确认支持的规则组合才显示 Live Updating；可保存但不能由设备实时重算的规则明确标记 Refresh on next connection，并由用户主动刷新；不能表达或未经确认的字段/运算符拒绝保存。具体能力矩阵留到参考审计、格式测试和各型号分级实机验证。
 
 ### DEC-PL-005：删除语义
 

@@ -68,8 +68,8 @@ Do not silently keep retrying or switch to a lower-quality workaround.
 
 # Device-write safety
 
-- Only explicitly supported and positively identified user-owned iPod Photo and iPod Classic devices may be written.
-- Unknown or unverified devices are read-only and must be rejected by every write path.
+- Real-device support is evidence-tiered. Only a positively identified user-owned device named by the active device task may enter an experimental write path; public support claims must distinguish reference-backed, fixture-verified, read-verified, and write-verified models.
+- Unknown devices remain read-only. A reference-backed but not write-verified model may be written only in an explicitly scoped experiment after its format profile, stable identity, recovery plan, and external backup are verified; there is no generic UI override.
 - Before the first real write to each physical device, require and verify a recoverable backup as defined by `docs/SAFETY_MODEL.md` and the active task.
 - UI code never writes device files directly. Every mutation goes through the core transaction service.
 - Do not redistribute or load the reference `iTunesCrypt.dll`; the formal x64 project uses source-level, license-compatible implementations.

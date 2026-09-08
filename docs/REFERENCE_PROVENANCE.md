@@ -5,6 +5,7 @@
 - 本次实际只读参考根：`D:\dev\foo\FooPodBridge\Ref`
 - 项目参考根：`D:\dev\foo\FooPodBridge\Ref`
 - 详细证据：[`../tasks/001-完成参考源码与许可证审计/AUDIT_EVIDENCE.md`](../tasks/001-完成参考源码与许可证审计/AUDIT_EVIDENCE.md)
+- 历史行为中文蓝图：[`IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md`](IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md)
 
 ## 1. 最终审计结论
 
@@ -49,14 +50,14 @@ libgpod 官方镜像没有标签，因此使用审计日 `main` 的精确 commit
 
 | ID | 精确参考文件 | 后续用途 | 采用结论 | 计划正式目标 | 独立验证 |
 | --- | --- | --- | --- | --- | --- |
-| FD-DB-01 | `foo_dop/itunesdb.h`、`itunesdb.cpp`、`itunesdb_helpers.cpp`、`reader.cpp`、`reader.h`、`writer_itunesdb.cpp` | iTunesDB 记录、端序、Reader/Writer | 只参考知识；不复制 | `src/core/database/*` | 脱敏 Photo/Classic fixture、损坏/截断测试、无修改往返 |
+| FD-DB-01 | `foo_dop/itunesdb.h`、`itunesdb.cpp`、`itunesdb_helpers.cpp`、`reader.cpp`、`reader.h`、`writer_itunesdb.cpp` | iTunesDB 记录、端序、Reader/Writer | 只参考知识；不复制 | `src/core/database/*` | 脱敏/私有家族 fixture、损坏/截断测试、无修改往返 |
 | FD-DB-02 | `foo_dop/itunesdb_track.cpp`、`itunesdb_mappings.cpp` | 曲目字段、Media Kind、SoundCheck、gapless 字段 | 只参考知识；不复制 | `src/core/database/*`、`src/core/media/*` | 与 libgpod 字段说明交叉核对；模型 round-trip |
 | FD-PL-01 | `foo_dop/itunesdb_playlist.cpp` | master/普通/Smart playlist 关系 | 只参考知识；不复制 | `src/core/database/*` | fixture 引用完整性、排序、空列表测试 |
 | FD-IMP-01 | `foo_dop/file_adder.cpp`、`file_adder.h`、`file_adder_helpers.cpp` | 历史导入检查、元数据与失败行为 | 只参考行为；不继承同步/转码架构 | `src/core/media/*`、`src/core/transaction/*` | 规格驱动的格式、空间、重复、故障注入测试 |
 | FD-SC-01 | `foo_dop/itunesdb_track.cpp` 第 337–357 行 | ReplayGain 到 SoundCheck：`1000 * 10^(-0.1 * gain_dB)` | 只参考公式；原创实现 | `src/core/media/soundcheck.*` | libgpod `itdb.h` 第 1356–1367 行为第二来源；数值向量和边界测试 |
 | FD-GAP-01 | `foo_dop/gapless_scanner.cpp/.h`、`gapless.cpp/.h`、`mp3.cpp`、`mp4.cpp/.h` | MP3/AAC delay、padding、sample count | 只参考知识；不复制 | `src/core/media/gapless/*` | LAME/iTunSMPB 样本、连续专辑、foobar 解码 sample count、损坏文件 |
 | FD-GAP-02 | `foo_dop/vendored/mp3_utils.cpp/.h`、`vendored/sdk-license.txt` | 旧 foobar SDK MP3 helper | 禁止从旧副本采用 | 无 | 任务 002 只允许官方现代 SDK；Core 自有解析器保持 SDK 无关 |
-| FD-SPL-01 | `foo_dop/smart_playlist_editor.cpp/.h`、`smart_playlist_processor.cpp/.h`、`itunesdb_playlist.cpp` | Smart Playlist 字段、运算符、编辑与成员计算 | 只参考知识；不复制 UI/算法 | `src/core/database/smart_playlist/*` 与共享编辑模型 | libgpod 交叉验证、格式往返、未知规则保留、Photo/Classic 实机能力矩阵 |
+| FD-SPL-01 | `foo_dop/smart_playlist_editor.cpp/.h`、`smart_playlist_processor.cpp/.h`、`itunesdb_playlist.cpp` | Smart Playlist 字段、运算符、编辑与成员计算 | 只参考知识；不复制 UI/算法 | `src/core/database/smart_playlist/*` 与共享编辑模型 | libgpod 交叉验证、格式往返、未知规则保留、型号级实机能力矩阵 |
 | FD-ART-01 | `foo_dop/photodb.cpp/.h` | ArtworkDB、图像记录和 `.ithmb` | 只参考知识；不复制 | `src/core/database/artwork/*`、`src/core/media/artwork/*` | libgpod artwork 文件、脱敏 fixture、图像尺寸/端序与共享引用测试 |
 | FD-DEV-01 | `foo_dop/device_info.cpp`、`plist.cpp/.h`、`ipod_manager.cpp/.h`、`ipod_scanner.cpp/.h` | Windows 磁盘设备、SysInfo、能力属性 | 只参考行为；原创 Windows 实现 | `src/core/device/*` | Windows 卷 fixture、真实设备只读证据、libgpod `itdb_device.c` 交叉验证 |
 | FD-DEL-01 | `foo_dop/file_remover.cpp/.h`、`remove_files.h`、`maintenance.h` | 删除与引用关系 | 只参考行为；不继承历史直接写路径 | `src/core/transaction/*` | DB-first 故障注入、playlist 引用、未知 orphan 不删除 |
@@ -80,7 +81,7 @@ libgpod 根 `COPYING` 是旧 LGPLv2 全文，但实际候选文件的文件头�
 | LG-H58-01 | [`src/itdb_hash58.c`](https://github.com/gtkpod/libgpod/blob/7982c5554f78dde47fd006afbeff659201d6db3d/src/itdb_hash58.c) | `BSD-3-Clause`；Christophe Fergeau，基于 wtbw proof-of-concept | **修改采用**；保留完整文件头，去除 GLib/API 耦合 | `src/core/database/hash58.cpp`、`.h` | 上游交叉实现、自建已知向量、错误 FireWire ID、DB 篡改、实机 Classic 接受 |
 | LG-DB-01 | `src/itdb_itunesdb.c`、`src/itdb.h` | `LGPL-2.1-or-later`；并注明部分知识来自 gnupod `mktunes.pl` | 只参考格式知识；不复制 | `src/core/database/*` | 与 foo_dop 和 fixture 三方交叉验证 |
 | LG-PL-01 | `src/itdb_playlist.c`、`src/itdb.h` Smart Playlist 段 | 文件整体 `LGPL-2.1-or-later`；部分段落称可用 “FreeBSD license” 但未附精确正文/SPDX | 不依赖含糊的额外授权；只按 LGPL 来源作知识参考，不复制 | `src/core/database/smart_playlist/*` | 规则往返、成员计算、实机 Live 能力 |
-| LG-DEV-01 | `src/itdb_device.c`、`src/itdb_sysinfo_extended_parser.c`、`README.SysInfo`、`README.overview` | 源码 `LGPL-2.1-or-later`；README 为文档证据 | 只参考型号、FireWire ID 与能力知识 | `src/core/device/*` | 官方设备文件、两台设备只读证据、隐私遮蔽 |
+| LG-DEV-01 | `src/itdb_device.c`、`src/itdb_sysinfo_extended_parser.c`、`README.SysInfo`、`README.overview` | 源码 `LGPL-2.1-or-later`；README 为文档证据 | 只参考型号、FireWire ID 与能力知识 | `src/core/device/*` | 官方设备文件、点名设备只读证据、隐私遮蔽 |
 | LG-ART-01 | `src/itdb_artwork.c`、`src/db-artwork-parser.c`、`src/db-artwork-writer.c`、`src/itdb_photoalbum.c` | `LGPL-2.1-or-later` | 只参考格式知识；不引入 GLib/GdkPixbuf | `src/core/database/artwork/*` | foo_dop、fixture 和实机 artwork 三方验证 |
 
 hash58 文件调用 GLib `GChecksum` 只是实现依赖，不改变其独立 BSD-3-Clause 授权。正式移植只采用该文件的算法和常量，替换内存、错误和 SHA-1 调用，不把 libgpod 或 GLib 作为运行时依赖。
@@ -142,10 +143,12 @@ foo_dop、libgpod 的 LGPL 数据库/artwork/device 文件因为没有复制，�
 - hash58：上游没有独立已知向量；任务 004 必须建立公开/自建向量、错误 ID、篡改检测，并最终由脱敏 Classic fixture 与实机接受交叉验证；
 - iTunesDB：任务 003/004 用两类脱敏 fixture 证明未知字段保留、损坏拒绝和无修改往返；
 - gapless：任务 009 使用 MP3/AAC 连续曲目和编码器元数据验证，扫描失败不得写 dummy；
-- Smart Playlist：任务 014 只把实机验证过的 Photo/Classic 规则组合标记为 Live；
+- Smart Playlist：任务 014 只把目标型号实机验证过的规则组合标记为 Live；
 - SDK：官方 `SDK-2025-03-07.7z` 的包哈希、WinRAR 完整性测试、必要文件和包内 `sdk-license.txt` 已于任务 002 复核通过；
 - 设备能力与 artwork：任务 005/012 以只读设备证据和脱敏 fixture 校正历史型号表，历史源码不能单独证明支持。
 
 ## 8. 审计规则
 
 后续任何第三方源码进入正式目录前，必须同时具备：精确上游 URL、commit/tag、原始文件、文件许可证、采用方式、正式目标、保留声明和独立验证。缺少任一项就拒绝进入构建与组件包。
+
+本文件继续作为许可证和文件级采用方式的唯一依据；中文蓝图负责把已批准的“只参考知识后原创实现”转换成跨任务目标流程和源码导航，不能反向扩大本文件允许的复用范围。

@@ -4,6 +4,7 @@
 - 日期：2026-08-28
 - 产品目标：[`PRODUCT_GOAL.md`](PRODUCT_GOAL.md)
 - 安全模型：[`SAFETY_MODEL.md`](SAFETY_MODEL.md)
+- 历史实现中文蓝图：[`IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md`](IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md)
 
 ## 1. 架构决定
 
@@ -14,11 +15,13 @@
 - 不直接移植旧 UI、iOS/Apple Mobile Device 路径、x86 类型假设或来源不明二进制；
 - Core、foobar 服务、FooCrate UI、独立 Columns UI 和 Default UI 分层设计。
 
+历史 `foo_dop / iPod manager` 的程序思路不在每个任务中重新概述。跨任务共同流程、空 Library、格式家族、历史行为引用和学习顺序统一维护在 [`IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md`](IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md)；对应任务只冻结自己采用的章节、差异和验证结果。
+
 ## 2. 系统边界
 
 ```mermaid
 flowchart LR
-    IPOD["iPod Photo / Classic\n磁盘模式"]
+    IPOD["click-wheel iPod\nWindows 存储卷"]
     CORE["FooPodBridge Core\ndevice · database · media · transaction"]
     SERVICE["FooPodBridge foobar 服务\n快照 · 能力 · 异步操作"]
     CUI["独立 Columns UI\nDevice Panel"]
@@ -70,10 +73,11 @@ foo_crate.dll
 职责：
 
 - 解析和序列化传统 `iTunesDB`、播放列表、曲目与相关设备数据库；
-- 为 Photo 和 Classic 建立明确的格式/能力分支；
+- 以数据库家族建立可扩展格式 profile：传统未签名 `iTunesDB`、6G/hash58 签名 `iTunesDB`，并把 Shuffle 与 Nano 5+ 新数据库路径隔离；
+- 型号能力和验证等级独立于格式 profile；同一 Reader/Writer 可以被多个型号复用，但不能因此自动继承实机写入结论；
 - 保留当前实现尚不理解但设备需要的记录和字段，防止无意删除；
 - 管理 master playlist、普通 playlist 和 Smart Playlist 引用；
-- 处理 Classic 所需 hash58；
+- 处理 Classic、Nano 3/4 等签名传统数据库候选设备所需的 hash58；
 - 对序列化结果执行内存中往返解析和结构一致性验证。
 
 Reader、领域模型、Writer 和 Validator 分开。UI 不接触原始数据库记录。
