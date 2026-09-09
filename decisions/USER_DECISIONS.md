@@ -70,7 +70,7 @@
 
 ### DEC-DEV-002：磁盘模式是外部前置条件
 
-用户于 2026-09-09 确认：前一日完成新状态 Nano 4 测试，设备接入电脑时默认自动开启“用作磁盘”。这条观察支持 Nano 4 主线的普通接入流程，但不需要外推到所有型号、固件或用户设置。
+用户于 2026-09-09 确认：前一日完成新状态 Nano 4 测试，设备接入电脑时默认自动开启“用作磁盘”；随后在从未安装 iTunes 的电脑上只读确认该设备仍直接挂载 FAT32 volume，并完成源/备份/采集前后逐文件 SHA-256 零差异验证。这些证据支持 Nano 4 主线的普通接入流程，但不外推到所有型号、固件或用户设置。
 
 状态：已批准（2026-09-09）。无论某台设备默认不开启、用户后续关闭，还是外部软件改变了该设置，只要 Windows 当前没有提供可访问的受支持存储卷，FooPodBridge 就停在 `NotMounted`。它可以说明“磁盘模式存储卷是前置条件”，但不提供 iTunes 式的 iPod 配置、启用、恢复或绕过功能。
 
@@ -103,9 +103,21 @@
 - 卷容量约 15.03 GiB，存在 `iPod_Control`、传统未压缩 `iTunesDB`、ArtworkDB 和 204 个现有媒体文件；公开记录不保存卷标、曲名、playlist 名或数据库指纹；
 - 主数据库 `mhbd` 声明长度与实际 308,628 字节一致，header 长 244 字节、数据库版本字段 49、五个顶层 dataset，hash58 区非零；`SysInfo` 为 0 字节且没有 `SysInfoExtended`，稳定设备 ID、固件和签名输入仍需由设备发现任务取得；
 - 完整 `iPod_Control` 已只读复制到 Git 忽略的设备外目录，共 232 个文件、4,166,620,499 字节，并逐文件 SHA-256 验证零差异；Device/iTunes/Artwork 私有 fixture 另存于 Git 忽略目录；
+- 2026-09-09 在从未安装 iTunes 的电脑确认 Restore 后设备仍直接挂载 FAT32 volume；空状态 `iPod_Control` 共 15 个文件、21,046,250 字节、零音乐文件，`iTunesDB` 为 14,314 字节、header 244、format 1、version 115、五个 dataset；
+- Restore 后完整备份、Device/iTunes 私有 fixture、源与备份、采集前后源文件均逐文件 SHA-256 零差异；详细证据见 [`NANO4_20260909_RESTORED_CLEAN_WINDOWS.md`](../docs/device-evidence/NANO4_20260909_RESTORED_CLEAN_WINDOWS.md)；
 - 当前只达到“Windows 存储卷与原始结构只读证据”；Reader 尚未实现，不能标记 `DeviceReadVerified`，更不能标记 `DeviceWriteVerified`。
 
 状态：只读采集与外部基线已完成。用户已授权这台物理 Nano 4 作为实验机，但第一次设备写入仍由后续点名任务阻断：必须先完成 fixture 往返、hash58/设备身份、事务故障测试、唯一测试音频和恢复步骤。
+
+### EVID-DEV-004：iPod 5.5G 只读实机
+
+- 用户于 2026-09-09 把其称为 iPod 5.5G 的设备接入从未安装 iTunes 的电脑；
+- Windows 直接挂载约 119 GiB FAT32 volume，存在 `iPod_Control`、1,862 个媒体文件、传统未压缩 `iTunesDB` 和 Artwork；
+- `iTunesDB` 为 4,034,040 字节、header 244、format 1、version 49、五个 dataset，根声明长度与文件一致；
+- Device/iTunes/Artwork 共 19 个文件、470,402,770 字节进入 Git 忽略的私有 fixture；源/fixture 与采集前后源子集逐文件 SHA-256 零差异，未复制 Music；
+- 精确 Apple 型号、固件、119 GiB 存储改装方式、稳定身份、完整备份和恢复方法尚未核实。
+
+状态：纯净 Windows 存储卷与私有 fixture 只读采集完成，详细证据见 [`IPOD55G_20260909_CLEAN_WINDOWS.md`](../docs/device-evidence/IPOD55G_20260909_CLEAN_WINDOWS.md)。当前仅作为任务 003 的 `TraditionalPreserveOnly` 输入，不构成可写 profile、`DeviceReadVerified` 或任何实机写入授权。
 
 ## 4. 第一轮：直接导入
 

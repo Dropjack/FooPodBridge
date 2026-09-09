@@ -32,11 +32,22 @@ target_compile_options(foopodbridge_core PRIVATE /W4 /WX /permissive- /Zc:__cplu
 
 # These interface targets are permanent dependency boundaries. Later tasks add
 # real implementations without changing the allowed Core dependency direction.
-foreach(core_module IN ITEMS device database media transaction)
+foreach(core_module IN ITEMS device media transaction)
   add_library(foopodbridge_core_${core_module} INTERFACE)
   target_link_libraries(foopodbridge_core_${core_module} INTERFACE foopodbridge_core)
   target_include_directories(foopodbridge_core_${core_module} INTERFACE include)
 endforeach()
+
+add_library(foopodbridge_core_database STATIC
+  src/core/database/reader.cpp
+  src/core/database/edit.cpp
+  src/core/database/writer.cpp
+  src/core/database/validator.cpp
+  src/core/database/comparator.cpp
+)
+target_link_libraries(foopodbridge_core_database PUBLIC foopodbridge_core)
+target_include_directories(foopodbridge_core_database PUBLIC include)
+target_compile_options(foopodbridge_core_database PRIVATE /W4 /WX /permissive- /Zc:__cplusplus /utf-8)
 
 add_library(foopodbridge_contract STATIC
   src/contract/service_guids.cpp
@@ -98,6 +109,18 @@ if(BUILD_TESTING)
   target_compile_options(foopodbridge_component_identity_tests PRIVATE /W4 /WX /permissive- /Zc:__cplusplus /utf-8)
   target_link_libraries(foopodbridge_component_identity_tests PRIVATE ole32)
   add_test(NAME component_identity COMMAND foopodbridge_component_identity_tests)
+
+  foreach(database_test IN ITEMS reader writer corruption private_fixture)
+    add_executable(foopodbridge_database_${database_test}_tests
+      tests/database_${database_test}_tests.cpp
+    )
+    target_link_libraries(foopodbridge_database_${database_test}_tests PRIVATE foopodbridge_core_database)
+    target_compile_options(foopodbridge_database_${database_test}_tests PRIVATE /W4 /WX /permissive- /Zc:__cplusplus /utf-8)
+    add_test(NAME database_${database_test} COMMAND foopodbridge_database_${database_test}_tests)
+  endforeach()
+  target_compile_definitions(foopodbridge_database_private_fixture_tests PRIVATE
+    FOOPODBRIDGE_PRIVATE_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tests/private-fixtures"
+  )
 
   find_program(FOOPODBRIDGE_POWERSHELL_EXECUTABLE NAMES powershell REQUIRED)
   add_test(NAME source_boundaries

@@ -1,11 +1,12 @@
 # iPod Nano 4：iTunes Restore 与无 iTunes 复测交接任务
 
-- 状态：已结束；用户已确认 `MountedByDefault`，产品决定不再继续其他磁盘模式情形的采集
+- 状态：已完成；用户已确认 `MountedByDefault`，并完成 Restore 后纯净 Windows 只读采集
 - 建立日期：2026-09-08
 - 结束日期：2026-09-09
 - 设备：2026-09-08 已建立到货基线的用户自有 16 GB iPod Nano 4
 - 到货证据：[`NANO4_20260908_BASELINE.md`](NANO4_20260908_BASELINE.md)
-- 本任务授权：历史只读采集授权随任务结束；本文不再授权 Codex 访问当前连接的设备
+- 最终证据：[`NANO4_20260909_RESTORED_CLEAN_WINDOWS.md`](NANO4_20260909_RESTORED_CLEAN_WINDOWS.md)
+- 本任务授权：本轮只读采集已完成；本文不继续授权设备写入或额外设备操作
 
 ## 0. 结束记录
 
@@ -13,7 +14,7 @@
 
 用户同时冻结了更重要的产品边界：若任何设备默认不开启磁盘使用，或用户、设备、外部软件后续关闭了它，FooPodBridge 不负责配置、启用、恢复或绕过该状态。未获得 Windows 可访问存储卷的设备直接停在 `NotMounted`。FooPodBridge 是音频管理组件，不是 iTunes 的 iPod 配置替代品。
 
-本地 Git 忽略目录中只存在 `nano4-20260908-original` 基线，没有本文原计划的 Restore 后备份或新 fixture。因此，这里只记录用户可见设置的实机结论，不声称本文原定的目录、数据库和 SHA-256 全套采集已完成。任务因产品决定消除了继续采集的必要性而结束；以下步骤仅作历史试验设计保留，不再执行。
+2026-09-09，用户把同一台设备带到从未安装 iTunes 的电脑。本轮只读检查确认 Windows 直接挂载 15.03 GiB FAT32 volume；Restore 后 `iPod_Control` 有 15 个文件、零音乐文件，`iTunesDB` 为 14,314 字节、244 字节 header、format 1、version 115、五个 dataset，根声明长度与文件一致。完整备份、Device/iTunes 私有 fixture、源/备份 SHA-256 和采集前后源文件对照全部通过，零差异。详细记录见最终证据；以下步骤仅作历史试验设计保留，不再执行。
 
 ## 1. 这次实验要回答什么
 

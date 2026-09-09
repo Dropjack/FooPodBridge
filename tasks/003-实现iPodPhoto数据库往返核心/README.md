@@ -1,12 +1,16 @@
 # 003-实现传统 iTunesDB 共同往返核心
 
-- 状态：规格核对中
+- 状态：实现完成待验收
 - 日期：2026-09-09
 - 前置任务：[`002-建立x64组件工程与服务合同`](../002-建立x64组件工程与服务合同/README.md) 已验收
 - 对应路线：[`../TODO.md`](../TODO.md) 的任务 003
-- 当前授权：允许记录设计结论并使用已有 Git 忽略的 Nano 4 电脑端备份/私有 fixture；不授权访问当前连接设备，尚未授权 C++ 实现、构建或任何设备写入
+- 当前授权：用户于 2026-09-09 确认设备已弹出，并批准按 `SPEC.md` 实现、使用电脑端私有 fixture 测试及执行 Debug/Release 构建；不授权设备访问、设备写入、组件部署或候选包制作
 - 长期实现蓝图：[`../../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md`](../../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md) 的 `BP-DB-*`、`BP-INIT-001/003`、`BP-FMT-001/002/003`
+- 实现规格：[`SPEC.md`](SPEC.md)
+- 验证记录：[`VALIDATION.md`](VALIDATION.md)
 - Nano 4 基线：[`../../docs/device-evidence/NANO4_20260908_BASELINE.md`](../../docs/device-evidence/NANO4_20260908_BASELINE.md)
+- Nano 4 Restore 后空库：[`../../docs/device-evidence/NANO4_20260909_RESTORED_CLEAN_WINDOWS.md`](../../docs/device-evidence/NANO4_20260909_RESTORED_CLEAN_WINDOWS.md)
+- iPod 5.5G 只读基线：[`../../docs/device-evidence/IPOD55G_20260909_CLEAN_WINDOWS.md`](../../docs/device-evidence/IPOD55G_20260909_CLEAN_WINDOWS.md)
 - 磁盘模式验证结论：[`../../docs/device-evidence/NANO4_ITUNES_RESTORE_HANDOFF.md`](../../docs/device-evidence/NANO4_ITUNES_RESTORE_HANDOFF.md)
 
 ## 为什么先做共同核心
@@ -49,7 +53,8 @@ FooPodBridge 不以“复刻 iTunes、一次支持所有 iPod”为目标。完�
 ## 2026-09-09 磁盘模式结论
 
 - 用户已完成新状态 Nano 4 测试，并确认设备接入电脑时默认自动开启“用作磁盘”，记为 `MountedByDefault`；
-- 该结论只记录用户可见行为；本地没有 Restore 后新备份或 fixture，不声称完成了原交接任务的数据库和 hash 采集；
+- 已在从未安装 iTunes 的电脑只读确认 Restore 后设备仍直接挂载 FAT32 volume；完整备份、Device/iTunes 私有 fixture 和采集前后逐文件 SHA-256 对照零差异；
+- Restore 后空 `iTunesDB` 为 14,314 字节、header 244、format 1、version 115、五个 dataset，可与到货非空库共同驱动任务 003 的 Reader/preserve-only 测试；
 - 产品边界已通过 [`DEC-DEV-002`](../../decisions/USER_DECISIONS.md) 冻结：FooPodBridge 只管理 Windows 已暴露的可访问存储卷。如果“用作磁盘”未默认开启或后续被关闭，不配置 iPod、不控制 iTunes、不发送私有启用命令；
 - 该结论消除了继续验证“如何帮设备开启磁盘使用”的任务前置，不改变任务 003 的纯电脑 fixture 与临时目录边界。
 
@@ -65,8 +70,12 @@ FooPodBridge 不以“复刻 iTunes、一次支持所有 iPod”为目标。完�
 - 可以读取 Nano 4 fixture 的共同记录并原样保留本任务尚未理解的 6G/签名区域，但不在本任务声称能生成 Nano 4 可接受数据库；
 - 所有测试只操作仓库 fixture 和电脑临时目录，不连接或写入实机。
 
+2026-09-09 又取得用户所称 iPod 5.5G 的真实传统数据库私有 fixture：4,034,040 字节、header 244、format 1、version 49、五个 dataset，并带有较大 Library 与 Artwork 数据。精确型号/profile 核实前使用 `TraditionalPreserveOnly`；它增强 Reader、规模和未知数据保留测试，但不扩大本任务的设备写入范围。
+
 Classic、Nano 3/4 的 6G 格式差异与 hash58 留在任务 004。真实 Photo fixture 到手后可以把该型号从 `StructureKnown` 提升到 `FixtureRoundTrip`，但不再阻断共同核心实现。
 
 ## 下一检查点
 
-下次按蓝图 `BP-DB-*`、`BP-INIT-003` 和 `BP-FMT-002/003`，冻结私有 Nano 4 fixture 的使用方式、未签名最小空 Library、未知记录保留和自动比较标准；核对完成并获得明确实现授权后，任务才能转为“可实现”。
+[`SPEC.md`](SPEC.md) 已把私有 Nano 4 fixture 的 preserve-only 使用方式、未签名最小空 Library、Reader/Model/Writer/Validator、未知记录保留、错误分类、资源限制和自动比较标准收敛为实现合同。
+
+用户已批准 `SPEC.md` 第 17 节的五个业务边界并授权实现。C++ Core、三份私有 fixture preserve-only 验证及 Debug/Release 全量构建与 CTest 已完成，详见 [`VALIDATION.md`](VALIDATION.md)。当前只等待用户验收任务 003；磁盘模式与 iTunes 配置不再是本任务检查点。

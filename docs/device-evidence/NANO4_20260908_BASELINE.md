@@ -89,6 +89,6 @@
 
 ## 7. 后续磁盘模式结论
 
-用户于 2026-09-09 确认：新状态 Nano 4 接入电脑时默认自动开启“用作磁盘”，记为 `MountedByDefault`。该结论是用户对设备可见行为的实机验收；由于本地没有新增 Restore 后备份或 fixture，不将其写成数据库结构、文件清单或 SHA-256 验证证据。
+用户于 2026-09-09 确认：新状态 Nano 4 接入电脑时默认自动开启“用作磁盘”，记为 `MountedByDefault`。随后已在从未安装 iTunes 的电脑完成只读复测、完整备份和私有 fixture，见 [`NANO4_20260909_RESTORED_CLEAN_WINDOWS.md`](NANO4_20260909_RESTORED_CLEAN_WINDOWS.md)。
 
 产品决定独立于这台 Nano 4 的结果：FooPodBridge 只管理 Windows 已经暴露为可访问存储卷的磁盘模式 iPod。默认不开启、被用户关闭或被外部软件改变而没有存储卷的设备，均停在 `NotMounted`；不为此扩展 iTunes 式配置功能。
