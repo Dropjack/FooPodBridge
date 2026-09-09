@@ -1,8 +1,8 @@
 # FooPodBridge 产品总规格
 
 - 状态：已批准基线
-- 版本：0.1
-- 日期：2026-09-08
+- 版本：0.2
+- 日期：2026-09-09
 - 产品目标：[`../docs/PRODUCT_GOAL.md`](../docs/PRODUCT_GOAL.md)
 - 架构：[`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
 - 安全模型：[`../docs/SAFETY_MODEL.md`](../docs/SAFETY_MODEL.md)
@@ -14,7 +14,7 @@
 
 FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为磁盘模式 click-wheel iPod 提供读取、手动音乐导入、删除、播放列表、Smart Playlist、封面、SoundCheck、gapless 和 Audiobook 能力。
 
-产品不是 iTunes 媒体库替代品，不执行自动 Sync；它把 iPod 作为独立设备 namespace，而不是 foobar Playlist Manager 中的一组普通 playlist。
+产品不是 iTunes 媒体库或 iPod 配置功能的替代品，不执行自动 Sync；它把 iPod 作为独立设备 namespace，而不是 foobar Playlist Manager 中的一组普通 playlist。
 
 正式用户体验由三种入口共享同一 Core：
 
@@ -29,6 +29,7 @@ FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为磁盘模式 clic
 - FooPodBridge 以 `FooPodBridge-<version>.fb2k-component` 安装；
 - FooCrate 是另一个组件，通过 FooPodBridge 服务连接，不捆绑或自动安装 FooPodBridge；
 - FooPodBridge 不要求安装 iTunes、Apple Music 或 Apple Mobile Device Support 才能发现和管理已经由 Windows 暴露为受支持文件系统卷、且本项目已具备所需设备属性和签名能力的 click-wheel iPod；
+- Windows 当前暴露可访问的存储卷是硬前置。若“用作磁盘”未默认开启、被用户或外部软件关闭，FooPodBridge 不负责更改设置、启动或控制 iTunes，也不通过私有命令让设备进入磁盘模式；
 - 组件包不得包含 foobar2000、Apple DLL、x86 `iTunesCrypt.dll`、用户数据库或未经许可二进制。
 
 ## 3. 支持设备
@@ -53,6 +54,8 @@ FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为磁盘模式 clic
 - iPhone、iPod touch、Apple Mobile Device 和现代 iOS 数据库路径不支持。
 
 ## 4. 设备发现与概览
+
+只有 Windows 已提供可访问存储卷时才进入设备发现流程。只看到 USB 设备或充电状态时显示 `NotMounted`；配置或恢复磁盘模式不在 FooPodBridge 产品范围。
 
 设备到达后：
 

@@ -1,10 +1,11 @@
 # iPod Nano 4 纯净 Windows 与到货基线
 
 - 日期：2026-09-08
+- 后续更新：2026-09-09 已确认新状态设备默认开启“用作磁盘”，并冻结未挂载设备不属于产品配置范围
 - 设备角色：用户自有、允许破坏性实验的 16 GB iPod Nano 4
 - 当前结论：外部基线已验证；只读结构证据已采集；尚未授权任何具体设备写入动作
 - 私有数据：完整备份和原始 fixture 位于 Git 忽略目录，不随源码发布
-- 下一次人工交接：[`NANO4_ITUNES_RESTORE_HANDOFF.md`](NANO4_ITUNES_RESTORE_HANDOFF.md)
+- 后续验证结论：[`NANO4_ITUNES_RESTORE_HANDOFF.md`](NANO4_ITUNES_RESTORE_HANDOFF.md)
 
 ## 1. 本次要回答的问题
 
@@ -85,3 +86,9 @@
 - 尚未点名唯一测试音频和阶段 D 唯一写入动作。
 
 因此，完整备份已经让未来写入具备恢复前提，但它本身不构成“现在可以手工改 F 盘”的许可。
+
+## 7. 后续磁盘模式结论
+
+用户于 2026-09-09 确认：新状态 Nano 4 接入电脑时默认自动开启“用作磁盘”，记为 `MountedByDefault`。该结论是用户对设备可见行为的实机验收；由于本地没有新增 Restore 后备份或 fixture，不将其写成数据库结构、文件清单或 SHA-256 验证证据。
+
+产品决定独立于这台 Nano 4 的结果：FooPodBridge 只管理 Windows 已经暴露为可访问存储卷的磁盘模式 iPod。默认不开启、被用户关闭或被外部软件改变而没有存储卷的设备，均停在 `NotMounted`；不为此扩展 iTunes 式配置功能。

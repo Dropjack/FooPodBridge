@@ -1,13 +1,13 @@
 # 003-实现传统 iTunesDB 共同往返核心
 
 - 状态：规格核对中
-- 日期：2026-09-08
+- 日期：2026-09-09
 - 前置任务：[`002-建立x64组件工程与服务合同`](../002-建立x64组件工程与服务合同/README.md) 已验收
 - 对应路线：[`../TODO.md`](../TODO.md) 的任务 003
-- 当前授权：允许记录设计结论和对点名 Nano 4 做只读采集/电脑端备份；尚未授权 C++ 实现、构建或任何设备写入
+- 当前授权：允许记录设计结论并使用已有 Git 忽略的 Nano 4 电脑端备份/私有 fixture；不授权访问当前连接设备，尚未授权 C++ 实现、构建或任何设备写入
 - 长期实现蓝图：[`../../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md`](../../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md) 的 `BP-DB-*`、`BP-INIT-001/003`、`BP-FMT-001/002/003`
 - Nano 4 基线：[`../../docs/device-evidence/NANO4_20260908_BASELINE.md`](../../docs/device-evidence/NANO4_20260908_BASELINE.md)
-- Restore 交接任务：[`../../docs/device-evidence/NANO4_ITUNES_RESTORE_HANDOFF.md`](../../docs/device-evidence/NANO4_ITUNES_RESTORE_HANDOFF.md)
+- 磁盘模式验证结论：[`../../docs/device-evidence/NANO4_ITUNES_RESTORE_HANDOFF.md`](../../docs/device-evidence/NANO4_ITUNES_RESTORE_HANDOFF.md)
 
 ## 为什么先做共同核心
 
@@ -45,6 +45,13 @@ FooPodBridge 不以“复刻 iTunes、一次支持所有 iPod”为目标。完�
 - 当前数据库为传统未压缩 `iTunesDB`，可为共同 Reader 提供真实输入；
 - 设备的 `SysInfo` 为空且没有 `SysInfoExtended`，说明任务 005 仍必须自己取得稳定身份和 hash58 输入；
 - 本任务不因备份完成而写入设备。
+
+## 2026-09-09 磁盘模式结论
+
+- 用户已完成新状态 Nano 4 测试，并确认设备接入电脑时默认自动开启“用作磁盘”，记为 `MountedByDefault`；
+- 该结论只记录用户可见行为；本地没有 Restore 后新备份或 fixture，不声称完成了原交接任务的数据库和 hash 采集；
+- 产品边界已通过 [`DEC-DEV-002`](../../decisions/USER_DECISIONS.md) 冻结：FooPodBridge 只管理 Windows 已暴露的可访问存储卷。如果“用作磁盘”未默认开启或后续被关闭，不配置 iPod、不控制 iTunes、不发送私有启用命令；
+- 该结论消除了继续验证“如何帮设备开启磁盘使用”的任务前置，不改变任务 003 的纯电脑 fixture 与临时目录边界。
 
 ## 任务 003 的实际边界
 

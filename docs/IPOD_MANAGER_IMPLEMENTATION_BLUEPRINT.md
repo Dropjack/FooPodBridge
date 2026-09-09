@@ -60,7 +60,7 @@
 
 | 状态 | 发现的事实 | FooPodBridge 结果 |
 | --- | --- | --- |
-| `NotMounted` | Windows 看见 USB 设备，但没有可访问卷 | 不读取、不写入；说明需要先让 Windows/Apple 工具恢复或暴露存储卷 |
+| `NotMounted` | Windows 看见 USB 设备，但没有可访问卷 | 不读取、不写入；只说明磁盘模式存储卷前置未满足，不配置或恢复设备 |
 | `UnsupportedFileSystem` | 有卷，但 Windows 不能可靠读写，例如 MacPod HFS/HFS+ | 显示 Unsupported，不建议 Windows 格式化 |
 | `UnidentifiedVolume` | 有卷，但不能证明它是受支持的用户 iPod | 最多显示只读诊断；服务层拒绝写入 |
 | `Initializable` | 已确认是具有格式 profile 和活动实验/验证任务的设备，卷健康，但 `iPod_Control` 或主数据库不存在 | 显示“可初始化”，连接本身不创建任何文件 |
@@ -74,12 +74,13 @@
 
 iPod manager 的 Windows 路径先按 Apple USB ID 识别磁盘设备，再把磁盘关系映射到 Windows volume；最后只接受已挂载的 removable drive。没有 volume 时，它也没有后续数据库路径。
 
-FooPodBridge 采用同一事实边界，但使用现代 Windows 设备/卷 API 原创实现。它不负责打开 iTunes 的“Enable disk use”，不向未知设备发送私有控制命令，也不把充电状态冒充可管理状态。
+FooPodBridge 采用同一事实边界，但使用现代 Windows 设备/卷 API 原创实现。它不负责打开 iTunes 的“Enable disk use”，不启动或控制 iTunes，不向设备发送私有启用命令，也不把充电状态冒充可管理状态。若某型号默认不开启磁盘使用，或用户、设备、外部软件后续关闭了它，就停在 `NotMounted`，不为这些情形增加产品功能。
 
 用户概念参考：
 
 - `APPLE`：[Set up iPod as a hard disk in iTunes on PC](https://support.apple.com/en-ae/guide/itunes/itns3114/windows)：启用后可在 Windows 看到磁盘；若复选框不可用，设备可能已经可作硬盘使用。
 - `IM`：[`foo_dop/ipod_manager.cpp`](../../Ref/ipod_manager/foo_dop/ipod_manager.cpp) 第 216–300 行识别 USB/FireWire 型号，第 420–575 行建立 volume 关系，第 596–690 行扫描盘符。
+- `DEV`：用户于 2026-09-09 确认新状态 Nano 4 接入电脑时默认自动开启“用作磁盘”；该观察记录在 [`NANO4_ITUNES_RESTORE_HANDOFF.md`](device-evidence/NANO4_ITUNES_RESTORE_HANDOFF.md)，不外推为其他型号的保证。
 
 ### BP-DEV-003：型号名称只是证据之一
 

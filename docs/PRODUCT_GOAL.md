@@ -1,7 +1,7 @@
 # FooPodBridge 产品目标
 
 - 状态：已批准
-- 日期：2026-09-08
+- 日期：2026-09-09
 - 对应总规格：[`../specs/PRODUCT_SPEC.md`](../specs/PRODUCT_SPEC.md)
 - 当前决策任务：[`../tasks/000-确定项目目标与全部产品决策/README.md`](../tasks/000-确定项目目标与全部产品决策/README.md)
 
@@ -54,6 +54,7 @@
 - foobar/FooCrate playlist 对象不发送或拖入设备；普通设备 playlist 由用户明确 New 后加入曲目，原生 Apple Smart Playlist 只通过规则编辑器创建和编辑。
 - Podcasts、Video、Photo、iPhone、iPod touch 和云内容不在产品范围内。
 - 未识别或能力不明设备显示 Unsupported 并拒绝所有写入；已识别且参考支持的设备可以显示 Read-only 或 Experimental，不得冒充已验证。
+- 只管理 Windows 已暴露为可访问存储卷的磁盘模式 iPod；关闭或未默认开启“用作磁盘”的设备停在 `NotMounted`，不由 FooPodBridge 修改其配置。
 
 ## 5. 明确排除
 
@@ -63,6 +64,7 @@
 - 自动同步整个 foobar2000 媒体库或播放列表；
 - 后台监控媒体库并静默修改已连接设备；
 - 依赖 iTunes、Apple Music 或 Apple 账户才能执行日常导入；
+- 启动或控制 iTunes、更改 iPod 的“用作磁盘”设置，或通过私有命令启用未暴露的存储卷；
 - 修改 foobar2000 核心、C 盘日常安装或只读参考目录；
 - 把未实测 Nano、Shuffle、Mini 或其他型号宣传为“已验证可写”；参考支持和明确受控的实验写入不属于兼容承诺。
 

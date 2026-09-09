@@ -1,7 +1,7 @@
 # FooPodBridge 用户决策清单
 
 - 状态：当前路线所需决定已批准；明确延后与正式版前重开项保留
-- 日期：2026-09-08
+- 日期：2026-09-09
 - 当前任务：[`../tasks/003-实现iPodPhoto数据库往返核心/README.md`](../tasks/003-实现iPodPhoto数据库往返核心/README.md)
 - 作用：这是影响产品行为、设备数据、UI 或公开发布的唯一决策清单
 
@@ -25,6 +25,7 @@
 | DEC-ARCH-002 | Core 边界 | `device/database/media/transaction` 不依赖 foobar 或 UI，可独立测试 |
 | DEC-ARCH-003 | 组件边界 | FooPodBridge 与 FooCrate 是两个组件，通过版本化 foobar 服务连接 |
 | DEC-DEV-001 | 设备范围与验证 | 按数据库家族实现、按 `StructureKnown / FixtureRoundTrip / DeviceReadVerified / DeviceWriteVerified` 分级；只有第四级宣传“已验证可写”，点名实验机可在独立任务和完整备份门槛下受控写入，未知设备拒绝写入 |
+| DEC-DEV-002 | 磁盘模式前置 | 只管理 Windows 已暴露为可访问存储卷的 iPod；未开启或被关闭“用作磁盘”均不在产品处理范围，不配置 iPod、不控制 iTunes、不发送私有启用命令 |
 | DEC-SCOPE-001 | 管理方式 | 纯手动音乐管理，不提供媒体库镜像、后台同步或一键 Sync |
 | DEC-SCOPE-002 | 媒体范围 | Music 与 Audiobooks；排除 Podcasts、Video、Photo、iPhone 和 iPod touch |
 | DEC-SCOPE-003 | 播放数据 | 不双向同步播放次数、评分、跳过次数和播放位置 |
@@ -66,6 +67,12 @@
 | DEC-DIAG-001 | 诊断日志与导出 | 本地有界日志默认遮蔽序列号和用户路径；用户主动导出脱敏诊断包并在分享前预览 |
 | DEC-LIC-001 | 公开许可证 | FooCrate 保持 MIT；FooPodBridge 为 LGPL-3.0-or-later；hash58 为 BSD-3-Clause；原创共享合同为 0BSD；其余边界按已验收审计 |
 | DEC-PKG-002 | 候选发布节奏 | Core 自动测试持续运行；只有形成可人工验证的永久能力时才同时输出新的 FooPodBridge/FooCrate prerelease 包 |
+
+### DEC-DEV-002：磁盘模式是外部前置条件
+
+用户于 2026-09-09 确认：前一日完成新状态 Nano 4 测试，设备接入电脑时默认自动开启“用作磁盘”。这条观察支持 Nano 4 主线的普通接入流程，但不需要外推到所有型号、固件或用户设置。
+
+状态：已批准（2026-09-09）。无论某台设备默认不开启、用户后续关闭，还是外部软件改变了该设置，只要 Windows 当前没有提供可访问的受支持存储卷，FooPodBridge 就停在 `NotMounted`。它可以说明“磁盘模式存储卷是前置条件”，但不提供 iTunes 式的 iPod 配置、启用、恢复或绕过功能。
 
 ## 3. 必须提供的实机证据
 

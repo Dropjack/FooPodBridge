@@ -14,9 +14,9 @@
 
 - 当前任务：[`003-实现传统 iTunesDB 共同往返核心`](003-实现iPodPhoto数据库往返核心/README.md)
 - 状态：规格核对中
-- 当前阶段：2026-09-08 已完成 Nano 4 纯净 Windows 只读基线、完整外部备份和私有 fixture；已建立 iTunes Restore → 默认磁盘使用 → 必要时启用磁盘使用 → 纯净 Windows 复测的跨会话交接任务
-- 当前下一步：用户按 [`Nano 4 iTunes Restore 交接任务`](../docs/device-evidence/NANO4_ITUNES_RESTORE_HANDOFF.md) 在家执行 Restore，Codex 只读采集 Restore 后 fixture；随后按蓝图 `BP-DB-*` 与 `BP-FMT-002/003` 冻结共同核心并等待实现授权
-- 当前禁止：不创建假设备或空 UI；不手工修改 Nano 4，不访问 `foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读
+- 当前阶段：2026-09-09 用户已确认新状态 Nano 4 接入电脑时默认自动开启“用作磁盘”；`DEC-DEV-002` 已冻结“只管理 Windows 已暴露存储卷的设备”，原 iTunes Restore 交接任务因无需继续覆盖其他情形而结束
+- 当前下一步：按蓝图 `BP-DB-*`、`BP-INIT-003` 与 `BP-FMT-002/003` 冻结共同 Reader/Model/Writer/Validator、未签名最小空 Library、未知记录保留和自动比较标准；核对完成后等待实现授权
+- 当前禁止：不创建假设备或空 UI；不手工修改 Nano 4，不为未挂载设备开启或恢复磁盘模式，不访问 `foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读
 
 ## 状态定义
 
