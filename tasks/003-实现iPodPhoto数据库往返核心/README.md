@@ -1,6 +1,6 @@
 # 003-实现传统 iTunesDB 共同往返核心
 
-- 状态：实现完成待验收
+- 状态：已验收
 - 日期：2026-09-09
 - 前置任务：[`002-建立x64组件工程与服务合同`](../002-建立x64组件工程与服务合同/README.md) 已验收
 - 对应路线：[`../TODO.md`](../TODO.md) 的任务 003
@@ -78,4 +78,4 @@ Classic、Nano 3/4 的 6G 格式差异与 hash58 留在任务 004。真实 Photo
 
 [`SPEC.md`](SPEC.md) 已把私有 Nano 4 fixture 的 preserve-only 使用方式、未签名最小空 Library、Reader/Model/Writer/Validator、未知记录保留、错误分类、资源限制和自动比较标准收敛为实现合同。
 
-用户已批准 `SPEC.md` 第 17 节的五个业务边界并授权实现。C++ Core、三份私有 fixture preserve-only 验证及 Debug/Release 全量构建与 CTest 已完成，详见 [`VALIDATION.md`](VALIDATION.md)。当前只等待用户验收任务 003；磁盘模式与 iTunes 配置不再是本任务检查点。
+用户已批准 `SPEC.md` 第 17 节的五个业务边界并授权实现。C++ Core、三份私有 fixture preserve-only 验证及 Debug/Release 全量构建与 CTest 已完成，详见 [`VALIDATION.md`](VALIDATION.md)。用户于 2026-09-09 明确验收任务 003；磁盘模式与 iTunes 配置不再是后续数据库任务的检查点。

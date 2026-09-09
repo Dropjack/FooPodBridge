@@ -1,6 +1,6 @@
 # 任务 003：传统 iTunesDB 共同核心实现规格
 
-- 状态：实现完成待验收
+- 状态：已验收
 - 日期：2026-09-09
 - 任务入口：[`README.md`](README.md)
 - 长期蓝图：[`../../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md`](../../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md) 的 `BP-DB-*`、`BP-INIT-001/003`、`BP-FMT-001/002/003`

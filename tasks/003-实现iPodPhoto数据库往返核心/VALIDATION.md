@@ -1,7 +1,7 @@
 # 任务 003 验证记录
 
 - 日期：2026-09-09
-- 状态：实现完成待验收
+- 状态：已验收
 - 规格：[`SPEC.md`](SPEC.md)
 - 实现入口：[`../../include/foopodbridge/core/database`](../../include/foopodbridge/core/database)
 
@@ -51,3 +51,7 @@
 - hash58、设备稳定身份和真实 6G 可写 profile 仍属于任务 004/005；
 - Artwork、SoundCheck、gapless、Audiobook 和 Smart Playlist 规则仍为 opaque 或后续任务能力；
 - 本任务没有组件部署、候选包或设备写入产物。
+
+## 用户验收
+
+2026-09-09，用户明确回复“验收任务 003”。任务据此转为已验收；后续能力扩展必须进入独立任务，不能回头静默扩大本任务的真实设备写入边界。
