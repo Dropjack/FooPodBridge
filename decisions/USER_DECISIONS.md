@@ -105,7 +105,7 @@
 - 完整 `iPod_Control` 已只读复制到 Git 忽略的设备外目录，共 232 个文件、4,166,620,499 字节，并逐文件 SHA-256 验证零差异；Device/iTunes/Artwork 私有 fixture 另存于 Git 忽略目录；
 - 2026-09-09 在从未安装 iTunes 的电脑确认 Restore 后设备仍直接挂载 FAT32 volume；空状态 `iPod_Control` 共 15 个文件、21,046,250 字节、零音乐文件，`iTunesDB` 为 14,314 字节、header 244、format 1、version 115、五个 dataset；
 - Restore 后完整备份、Device/iTunes 私有 fixture、源与备份、采集前后源文件均逐文件 SHA-256 零差异；详细证据见 [`NANO4_20260909_RESTORED_CLEAN_WINDOWS.md`](../docs/device-evidence/NANO4_20260909_RESTORED_CLEAN_WINDOWS.md)；
-- 当前只达到“Windows 存储卷与原始结构只读证据”；Reader 尚未实现，不能标记 `DeviceReadVerified`，更不能标记 `DeviceWriteVerified`。
+- 任务 003 已用两份 Nano 4 私有 fixture 完成共同 Reader、Validator 与 preserve-only 原字节验证；生产设备发现与实时快照尚未实现，因此仍不能标记 `DeviceReadVerified`，更不能标记 `DeviceWriteVerified`。
 
 状态：只读采集与外部基线已完成。用户已授权这台物理 Nano 4 作为实验机，但第一次设备写入仍由后续点名任务阻断：必须先完成 fixture 往返、hash58/设备身份、事务故障测试、唯一测试音频和恢复步骤。
 

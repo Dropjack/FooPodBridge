@@ -12,11 +12,11 @@
 
 ## 当前进度
 
-- 当前任务：[`003-实现传统 iTunesDB 共同往返核心`](003-实现iPodPhoto数据库往返核心/README.md)
-- 状态：已验收
-- 当前阶段：任务 003 的传统 iTunesDB 共同 Core 已实现；Debug/Release 各 8/8 CTest 通过，Nano 4 到货非空库、Restore 后空库和用户所称 iPod 5.5G 大库均完成 preserve-only 读取、验证、逐字节 no-op 和修改拒绝
+- 当前任务：[`004-实现 6G/hash58 与 Nano 4 格式核心`](004-实现6G-hash58与Nano4格式核心/README.md)
+- 状态：规格核对中
+- 当前阶段：任务 003 已验收；任务 004 开始定义 Nano 3/4 与 Classic 的 hash58 签名 profile、私有设备 ID 边界和电脑侧验证合同
 - 同日实机补充：用户所称 iPod 5.5G 也在纯净 Windows 直接挂载 119 GiB FAT32 volume；Device/iTunes/Artwork 私有 fixture 已完成 19 文件、470,402,770 字节的源/fixture及采集前后 SHA-256 零差异验证，当前只作为 `TraditionalPreserveOnly` 输入
-- 当前下一步：任务 003 已由用户明确验收；下一项为任务 004“实现 6G/hash58 与 Nano 4 格式核心”，开始前仍需建立独立规格并核对其真实设备写入边界
+- 当前下一步：完成任务 004 的实现规格；算法、格式和测试由 Codex 负责，只有一次性只读取得 Nano 4 稳定 FireWire GUID 可能需要用户重新接入设备
 - 当前禁止：不创建假设备或空 UI；不手工修改 Nano 4，不为未挂载设备开启或恢复磁盘模式，不访问 `foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读
 
 ## 状态定义
@@ -41,7 +41,7 @@
 | 001 | [完成参考源码与许可证审计](001-完成参考源码与许可证审计/README.md) | 已验收 | 文件级来源矩阵、许可证与允许复用边界 |
 | 002 | [建立 x64 组件工程与服务合同](002-建立x64组件工程与服务合同/README.md) | 已验收 | 可安装组件、Core targets、版本化服务 ABI、包审计 |
 | 003 | [实现传统 iTunesDB 共同往返核心](003-实现iPodPhoto数据库往返核心/README.md) | 已验收 | Reader/Model/Writer/Validator、未签名 profile、Nano 4 私有 fixture 的共同记录输入 |
-| 004 | 实现 6G/hash58 与 Nano 4 格式核心 | 待讨论 | Classic/Nano 3/4 签名 profile、hash58 向量和 Nano 4 fixture 往返 |
+| 004 | [实现 6G/hash58 与 Nano 4 格式核心](004-实现6G-hash58与Nano4格式核心/README.md) | 规格核对中 | Classic/Nano 3/4 签名 profile、hash58 向量和 Nano 4 fixture 往返 |
 | 005 | 实现 Windows 设备发现与只读服务 | 待讨论 | 设备身份、能力矩阵、Library 快照、热插拔生命周期 |
 | 006 | 实现 FooCrate 只读 Devices 工作区 | 待讨论 | 使用真实服务数据的首个 FooCrate 设备 UI |
 | 007 | 实现设备事务、备份与故障恢复核心 | 待讨论 | 文件系统故障注入、Operation Plan、恢复状态机 |
