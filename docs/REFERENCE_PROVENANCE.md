@@ -1,6 +1,6 @@
 # 参考资料与来源边界
 
-- 状态：任务 001 已验收
+- 状态：任务 001 既有范围已验收；Nano 5+ 签名/CDB/SQLite 实施前必须增量重开
 - 审计日期：2026-08-28
 - 本次实际只读参考根：`D:\dev\foo\FooPodBridge\Ref`
 - 项目参考根：`D:\dev\foo\FooPodBridge\Ref`
@@ -25,10 +25,10 @@
 ### 1.2 采用方式
 
 - **允许修改采用**：仅计划采用 libgpod `src/itdb_hash58.c` 的算法和常量，移植到独立 C++ 文件；保留 BSD-3-Clause 文件头，不引入 GLib，SHA-1 使用本项目原创实现或 Windows 系统密码学封装。
-- **允许 SDK 方式使用**：任务 002 使用官方 foobar2000 SDK；任务 016 使用当前官方 Columns UI SDK。SDK 只存在于组件适配层，Core 不依赖 SDK。
+- **允许 SDK 方式使用**：任务 002 使用官方 foobar2000 SDK；任务 019 使用当前官方 Columns UI SDK。SDK 只存在于组件适配层，Core 不依赖 SDK。
 - **只参考知识后原创实现**：foo_dop 的数据库、导入、SoundCheck、gapless、artwork、设备识别、删除、Audiobook 和 Smart Playlist；libgpod 除 hash58 外的数据库、设备与 artwork 源码。
 - **不需要采用**：旧 `dop-sdk` 虽是 0BSD，但它只描述 foo_dop 的旧服务和 GUID；FooPodBridge 必须建立新的版本化服务合同。
-- **禁止使用**：`iTunesCrypt.dll/.lib`、`iPhoneCalc.h` 调用链、Apple Mobile Device/iPhone/iPod touch 路径、hash72/CBK、来源不明二进制、旧 panel UI 架构和旧 SDK 副本。
+- **当前禁止进入实现**：`iTunesCrypt.dll/.lib`、`iPhoneCalc.h` 调用链、Apple Mobile Device/iPhone/iPod touch 路径、未经增量审计的 hash72/CBK 表达或算法、来源不明二进制、旧 panel UI 架构和旧 SDK 副本。Nano 5+ 非 touch 仍是产品目标；任务 011 必须先找到合法来源并更新本文件，不能因目标批准自动解除此禁令。
 
 ## 2. 固定上游版本
 
@@ -38,7 +38,7 @@
 | [gtkpod/libgpod](https://github.com/gtkpod/libgpod/tree/7982c5554f78dde47fd006afbeff659201d6db3d) | commit `7982c5554f78dde47fd006afbeff659201d6db3d`，2012-05-04 | 2026-08-28 | hash58、格式、设备、SysInfo 与交叉验证 |
 | [foobar2000 SDK](https://www.foobar2000.org/SDK) | 官方发布 `2025-03-07`；包 SHA-256 `CCDA3C5840E66E0E28A7E4FE36407C4E78581AA30C40C362A188FCBAAE799A3E` | 2026-08-28 | 任务 002 的 x64 组件适配层基线 |
 | [reupen/foobar2000-sdk-modified](https://github.com/reupen/foobar2000-sdk-modified/tree/85f56870d5e8e5dc7bb8cd07179a44e3a6e5d834) | commit `85f56870d5e8e5dc7bb8cd07179a44e3a6e5d834` | 2026-08-28 | 只用于交叉核对 2025 SDK 许可正文，不作为正式 SDK 来源 |
-| [reupen/columns_ui-sdk](https://github.com/reupen/columns_ui-sdk/tree/2ac32c02dcf4685c120e4a3a8eaf2ea58a7df89d) | commit `2ac32c02dcf4685c120e4a3a8eaf2ea58a7df89d`，2026-07-13 | 2026-08-28 | 任务 016 的 Columns UI 适配层基线 |
+| [reupen/columns_ui-sdk](https://github.com/reupen/columns_ui-sdk/tree/2ac32c02dcf4685c120e4a3a8eaf2ea58a7df89d) | commit `2ac32c02dcf4685c120e4a3a8eaf2ea58a7df89d`，2026-07-13 | 2026-08-28 | 任务 019 的 Columns UI 适配层基线 |
 
 libgpod 官方镜像没有标签，因此使用审计日 `main` 的精确 commit。foobar2000 SDK 使用官方日期版本和包哈希，不使用 `Ref` 中 2021 年旧 SDK 作为正式基线。
 
@@ -64,7 +64,7 @@ libgpod 官方镜像没有标签，因此使用审计日 `main` 的精确 commit
 | FD-AUD-01 | `foo_dop/chapter.h`、`mp4.cpp`、`itunesdb_track.cpp` | Audiobook、章节、bookmark、shuffle 字段 | 只参考知识；不复制 | `src/core/media/audiobook/*` | M4B/MP4 章节样本、Media Kind 往返、设备能力测试 |
 | FD-UI-01 | `foo_dop/panel.cpp` | 旧 Columns UI panel | 禁止移植；仅历史 UX 参考 | 无 | 新 UI 只消费版本化服务 |
 | FD-IOS-01 | `foo_dop/config_ios.*`、`mobile_device_*`、`mobile_device_v2.*` | iPhone/iPod touch/Apple Mobile Device | 产品范围外，禁止使用 | 无 | 源码、构建依赖和包内容扫描 |
-| FD-CRYPT-01 | `foo_dop/iPhoneCalc.h`、`writer_sqlite.cpp` 的 hash72/CBK、`MobileDeviceSign/*` | 旧签名桥和闭源二进制 | 禁止使用 | 无 | x64 依赖/导入表/包内容扫描 |
+| FD-CRYPT-01 | `foo_dop/iPhoneCalc.h`、`writer_sqlite.cpp` 的 hash72/CBK、`MobileDeviceSign/*` | 旧签名桥和闭源二进制 | 只可作为“不可采用旧实现”的反例；当前禁止复制、调用或链接 | 任务 011 另寻合法来源并原创/允许实现；未完成前只读 | x64 依赖/导入表/包内容扫描、增量来源审计 |
 
 历史配置 `use_dummy_gapless_data=true` 与本项目 `DEC-MEDIA-002` 冲突，明确不得继承。历史同步、自动弹出、iPhone、Video、Podcast 和转码路径同样不能作为默认行为进入正式项目。
 
@@ -91,28 +91,31 @@ hash58 文件调用 GLib `GChecksum` 只是实现依赖，不改变其独立 BSD
 | 项目 | 允许使用 | 禁止/限制 | 分发要求 |
 | --- | --- | --- | --- |
 | foobar2000 SDK 2025-03-07 | 组件适配层、服务接口、metadb/artwork/async API；x64 构建 | 不进入 Core；不使用 `Ref` 的 2021 修改副本作正式基线；不分发 foobar2000 程序二进制 | 源码分发保留 SDK copyright、条件和免责声明；不得用作者名背书；源码清单用 `LicenseRef-foobar2000-SDK` |
-| Columns UI SDK commit `2ac32c0…` | 任务 016 的独立 panel/toolbar 适配层 | 不复制旧 `panel.cpp`；不进入 Core/FooCrate | `0BSD` 无保留条件；仍在第三方清单记录版本和来源 |
+| Columns UI SDK commit `2ac32c0…` | 任务 019 的独立 panel/toolbar 适配层 | 不复制旧 `panel.cpp`；不进入 Core/FooCrate | `0BSD` 无保留条件；仍在第三方清单记录版本和来源 |
 | dop-sdk | 无正式用途 | 不采用旧 GUID/API | 不进入源码和包，因此没有分发义务 |
 
 官方 foobar2000 SDK 包已固定版本和 SHA-256。2026-08-29，用户把官方 `.7z` 与解压目录放入仓库外的本地 staging；包 SHA-256 为 `CCDA3C5840E66E0E28A7E4FE36407C4E78581AA30C40C362A188FCBAAE799A3E`，与任务 001 固定值完全一致。WinRAR 7.13 对压缩包执行只读完整性测试返回 0；解压目录包含 674 个文件和全部必要 SDK 入口。官方 `sdk-license.txt` SHA-256 为 `2AA8AF2F2A0CCE2DCE4C2A4F422BCBD1752DAB7D1E1B973981B77C971B0B8A32`，与 FooCrate 当前官方 SDK 副本逐字节一致，许可证结论无需重开。
 
-## 4. 任务 002–014 采用边界
+## 4. 任务 002–017 采用边界
 
 | 任务 | 允许来源 | 正式采用方式 | 禁止项 |
 | --- | --- | --- | --- |
 | 002 工程与服务合同 | 官方 foobar2000 SDK；共享合同产品规格 | SDK 适配 + 原创 `0BSD` 合同 | 旧 SDK、dop-sdk GUID/API、空 UI |
 | 003 Photo iTunesDB | FD-DB-01/02、LG-DB-01 | 原创 Reader/Model/Writer/Validator | 复制旧 parser/writer、引入 GLib |
 | 004 Classic/hash58 | LG-H58-01、LG-DEV-01、FD-CRYPT-01 反例 | BSD-3-Clause hash58 移植 + 原创 Classic DB | `iTunesCrypt.dll/.lib`、hash72/CBK |
-| 005 设备发现 | FD-DEV-01、LG-DEV-01 | 原创 Windows 只读服务 | Apple Mobile Device/iOS 路径、未识别设备写入 |
+| 005 全目标家族注册表与设备发现 | FD-DEV-01、LG-DEV-01 | 原创 Windows 只读服务和证据门禁 | Apple Mobile Device/iOS 路径、未识别或 FormatPending 设备写入 |
 | 006 FooCrate 只读 UI | 原创 `0BSD` 服务合同、FooCrate MIT | 只消费快照 | LGPL Core/私有头复制到 FooCrate |
 | 007 事务与恢复 | 产品安全模型 | 完全原创 | 继承 foo_dop 直接文件写路径 |
-| 008 Photo Music 导入 | FD-IMP-01、FD-SC-01、数据库来源 | 规格驱动原创实现 | sync、自动转码、dummy gapless |
-| 009 Classic Music 导入 | FD-GAP-01、LG-H58-01 | 原创 gapless + BSD hash58 移植 | 用历史成功路径代替实机接受测试 |
-| 010 删除 | FD-DEL-01、数据库引用知识 | 原创 DB-first 事务 | 自动删除未知 orphan |
-| 011 普通 playlist | FD-PL-01、LG-DB-01 | 原创模型与 writer | 发送 foobar playlist/autoplaylist 对象 |
-| 012 artwork | FD-ART-01、LG-ART-01 | 原创、无 GLib/GdkPixbuf 的实现 | Photo Library 同步、复制旧 GDI+/GLib 架构 |
-| 013 Audiobook | FD-AUD-01、数据库字段知识 | 原创 Media Kind/章节实现 | 扩展名/Genre 偷猜类型 |
-| 014 Smart Playlist | FD-SPL-01、LG-PL-01 | 原创规则模型、writer、编辑器和成员计算 | 复制旧 UI/processor；把未验证规则宣称为 Live |
+| 008 Nano 4 Music 导入 | FD-IMP-01、FD-SC-01、数据库来源 | 规格驱动原创实现 | sync、自动转码、dummy gapless |
+| 009 早期/传统 profile | FD-DB-01/02、FD-DEV-01、LG-DB-01/LG-DEV-01 | 来源交叉验证后的原创 profile/Reader/Writer/Validator | 把多个代际当单一设备配置、用营销名猜写 |
+| 010 Shuffle profile | 待增量审计的 foo_dop/libgpod Shuffle 候选来源 | 审计后只参考知识并原创实现，除非另有明确允许结论 | 未审计复制、套用传统 iTunesDB Writer、无证据写入 |
+| 011 Nano 5+ profile | FD-CRYPT-01 仅作反例；CDB/SQLite/签名来源待增量审计 | 审计前只允许规格与只读研究；正式实现方式由增量任务 001 冻结 | `iTunesCrypt`、旧 iPhoneCalc、未经批准 hash72/CBK、Apple Mobile Device/iOS 路径 |
+| 012 跨家族实机验收 | FD-GAP-01、LG-H58-01 与各家族已批准来源 | 原创 gapless/能力矩阵 + 已批准 profile | 用历史成功路径或另一台设备代替本机接受测试 |
+| 013 删除 | FD-DEL-01、数据库引用知识 | 原创 DB-first 事务 | 自动删除未知 orphan |
+| 014 普通 playlist | FD-PL-01、LG-DB-01 | 原创模型与 writer | 发送 foobar playlist/autoplaylist 对象 |
+| 015 artwork | FD-ART-01、LG-ART-01 | 原创、无 GLib/GdkPixbuf 的实现 | Photo Library 同步、复制旧 GDI+/GLib 架构 |
+| 016 Audiobook | FD-AUD-01、数据库字段知识 | 原创 Media Kind/章节实现 | 扩展名/Genre 偷猜类型 |
+| 017 Smart Playlist | FD-SPL-01、LG-PL-01 | 原创规则模型、writer、编辑器和成员计算 | 复制旧 UI/processor；把未验证规则宣称为 Live |
 
 ## 5. 正式仓库与包所需许可证文件
 
@@ -134,7 +137,7 @@ foo_dop、libgpod 的 LGPL 数据库/artwork/device 文件因为没有复制，�
 - `MobileDeviceSign/iTunesCrypt.lib` 与 `stdafx.h`：只为上述 DLL 提供导入/声明，同样禁止；
 - `foo_dop/iPhoneCalc.h` 及 hash72/CBK 调用链；
 - `foo_dop/config_ios.*`、`mobile_device_*`、Apple Mobile Device Support、iTunes 安装目录 DLL；
-- Nano 5 hash72/CBK、iPhone/iPod touch、Video/Photo/Podcast 管理；
+- `iTunesCrypt`/旧 `iPhoneCalc` 及未经增量审计的 Nano 5+ hash72/CBK 实现；iPhone/iPod touch、Video/Photo/Podcast 管理；
 - `Ref` 中 foobar2000/Columns UI SDK 旧副本作为现代正式依赖；
 - 来源不明二进制、用户设备数据库、完整序列号、FireWire ID 或未脱敏 fixture。
 
@@ -142,10 +145,11 @@ foo_dop、libgpod 的 LGPL 数据库/artwork/device 文件因为没有复制，�
 
 - hash58：上游没有独立已知向量；任务 004 必须建立公开/自建向量、错误 ID、篡改检测，并最终由脱敏 Classic fixture 与实机接受交叉验证；
 - iTunesDB：任务 003/004 用两类脱敏 fixture 证明未知字段保留、损坏拒绝和无修改往返；
-- gapless：任务 009 使用 MP3/AAC 连续曲目和编码器元数据验证，扫描失败不得写 dummy；
-- Smart Playlist：任务 014 只把目标型号实机验证过的规则组合标记为 Live；
+- gapless：任务 012 使用 MP3/AAC 连续曲目和编码器元数据验证，扫描失败不得写 dummy；
+- Smart Playlist：任务 017 只把目标型号实机验证过的规则组合标记为 Live；
 - SDK：官方 `SDK-2025-03-07.7z` 的包哈希、WinRAR 完整性测试、必要文件和包内 `sdk-license.txt` 已于任务 002 复核通过；
-- 设备能力与 artwork：任务 005/012 以只读设备证据和脱敏 fixture 校正历史型号表，历史源码不能单独证明支持。
+- 设备能力与 artwork：任务 005/015 以只读设备证据和脱敏 fixture 校正历史型号表，历史源码不能单独证明支持。
+- Shuffle 与 Nano 5+：任务 010/011 实施前分别补齐文件级来源矩阵；找不到合法签名实现时允许保留目标和只读能力，但禁止用旧闭源二进制补洞。
 
 ## 8. 审计规则
 

@@ -1,7 +1,7 @@
 # FooPodBridge 的 iPod manager 中文实现蓝图
 
 - 状态：跨任务长期蓝图；任务级细节仍在对应任务冻结
-- 建立日期：2026-09-01；2026-09-08 由 Nano 4 实机证据修订设备范围
+- 建立日期：2026-09-01；2026-09-08 由 Nano 4 实机证据修订；2026-09-10 按全非 touch 目标重开
 - 参考基线：`reupen/ipod_manager` commit `08e0657b5ee09bd05cdb60273e1a139205d4d3f6`
 - 来源与许可证边界：[`REFERENCE_PROVENANCE.md`](REFERENCE_PROVENANCE.md)
 - 正式架构：[`ARCHITECTURE.md`](ARCHITECTURE.md)
@@ -16,14 +16,14 @@
 3. 需要写代码时，以本项目架构和安全模型重新实现，不逐行翻译旧源码；
 4. 新证据先更新本蓝图和对应任务，再改变实现，避免每次聊天重新总结整个旧项目。
 
-这不是旧源码的中文逐行注释，也不是一次性支持 23 个 iPod 家族的承诺。它按数据库家族描述共同实现，并用验证等级区分“参考支持”和“FooPodBridge 已在实机验证”，让项目不必为了每个旧型号都购买硬件。
+这不是旧源码的中文逐行注释，也不承诺所有家族在同一天获得写入能力。正式目标仍覆盖所有 Windows 可挂载存储卷模式的非 iPod touch；蓝图按数据库家族描述共同实现，并用验证等级区分“进入目标/自动识别”“参考或 fixture 支持”和“FooPodBridge 已在实机验证”，让项目不必为了每个旧型号都购买硬件。
 
 ## 2. 你先只需要理解这五句话
 
-1. FooPodBridge 管理的不是“USB 上有个 Apple 设备”，而是“Windows 已挂载、可安全访问、身份和数据库能力都已确认的 iPod 存储卷”。
+1. FooPodBridge 默认检查每个候选 Windows 存储卷；只有正向识别为非 iPod touch 后才纳入设备 namespace，能力未确认时保持只读分类而不是猜写。
 2. iPod 能播放歌曲，不是因为音频文件被复制进磁盘，而是因为音频文件与 `iTunesDB` 中的曲目、路径和 playlist 引用保持一致。
 3. 没有 `iTunesDB` 不一定是坏设备；对已确认支持且卷结构健康的设备，它可能是一个需要显式初始化的空 Library。
-4. Photo 等早期型号使用未签名传统 `iTunesDB`；Classic 与 Nano 3/4 使用带 6G 记录差异和 hash58 的传统 `iTunesDB`；Shuffle、Nano 5+ 和 iOS 另有额外数据库路径。
+4. 早期全尺寸/Mini/Photo/Video/Nano 1/2、Classic/Nano 3/4、Shuffle、Nano 5+ 至少分属数条数据库/签名路线；它们不是给同一个 Writer 换型号配置，具体变体必须由来源、fixture 和实机证据确认。
 5. 历史 iPod manager 告诉我们“哪些思路曾经可行”，FooPodBridge 仍要用 fixture、故障测试和受控实机验收证明自己的实现。
 
 如果只想跟进项目，读到这里后直接看第 5 节总流程和第 13 节任务映射即可。其余章节按问题查阅。
@@ -63,6 +63,7 @@
 | `NotMounted` | Windows 看见 USB 设备，但没有可访问卷 | 不读取、不写入；只说明磁盘模式存储卷前置未满足，不配置或恢复设备 |
 | `UnsupportedFileSystem` | 有卷，但 Windows 不能可靠读写，例如 MacPod HFS/HFS+ | 显示 Unsupported，不建议 Windows 格式化 |
 | `UnidentifiedVolume` | 有卷，但不能证明它是受支持的用户 iPod | 最多显示只读诊断；服务层拒绝写入 |
+| `FormatPending` | 已正向识别为目标范围内的非 touch iPod，但对应数据库/签名 profile 尚未实现或证据不足 | 显示家族和缺失能力；允许安全只读诊断，拒绝写入；不能从 UI 静默消失 |
 | `Initializable` | 已确认是具有格式 profile 和活动实验/验证任务的设备，卷健康，但 `iPod_Control` 或主数据库不存在 | 显示“可初始化”，连接本身不创建任何文件 |
 | `ReadyReadOnly` | 数据库有效，但设备尚未取得写入验收或当前能力不足 | 发布只读 Library 快照，拒绝写命令 |
 | `ReadyWritable` | 身份、格式、能力、备份和实机门槛全部满足 | 允许生成 Operation Plan；仍不自动写入 |
@@ -85,6 +86,8 @@ FooPodBridge 采用同一事实边界，但使用现代 Windows 设备/卷 API �
 ### BP-DEV-003：型号名称只是证据之一
 
 正式写入能力由稳定设备身份、文件系统、数据库版本、签名类型、固件/属性证据和实机验证共同决定。营销名称只用于显示和辅助判断。
+
+家族注册表必须覆盖所有目标代际，并把“这个型号属于哪条候选格式路线”和“当前证据允许做什么”分开。当前 Nano 4、iPod 5.5G 或未来设备只能提升匹配条目的证据，不能生成设备专用 Writer、样本模板或稳定 ID 分支。
 
 - `APPLE`：[Identify your iPod model](https://support.apple.com/en-ie/103823) 用于核对 A 型号、代际、容量和导航方式。
 - `IM`：[`foo_dop/device_info.cpp`](../../Ref/ipod_manager/foo_dop/device_info.cpp) 第 362–363 行列出 23 个非 touch 代际家族，第 520–1013 行按设备属性和产品代码细分。
@@ -176,7 +179,7 @@ Writer 输出必须由独立 Reader 再读一次。Validator 检查结构、计�
 
 1. Windows 已挂载健康、受支持的文件系统卷；
 2. 设备被正向识别为活动设备任务点名的物理实验机或验证机；
-3. 已取得足以选择数据库格式和签名方式的能力证据；
+3. 已取得足以选择数据库格式和签名方式的能力证据；`FormatPending` 设备不满足此条件；
 4. 主数据库文件确实不存在，而不是存在但打不开、截断或签名错误；
 5. 没有未完成事务或需要恢复的旧数据库证据。
 
@@ -188,7 +191,7 @@ iPod manager 的 `preparer_t` 会创建数据库目录；当 `iTunesCDB` 和 `iT
 
 - `IM`：[`foo_dop/prepare.cpp`](../../Ref/ipod_manager/foo_dop/prepare.cpp) 第 12–57 行。
 - `IM`：[`foo_dop/send_files.cpp`](../../Ref/ipod_manager/foo_dop/send_files.cpp) 第 5–56 行。
-- `IM` 更新记录：[`CHANGELOG.md`](../../Ref/ipod_manager/CHANGELOG.md) 的 0.6.5.7 记录了“blank Nano 5G”写库修复，证明空库是历史真实场景，但 Nano 5 的 SQLite/hash72 路径不进入本项目。
+- `IM` 更新记录：[`CHANGELOG.md`](../../Ref/ipod_manager/CHANGELOG.md) 的 0.6.5.7 记录了“blank Nano 5G”写库修复，证明空库是历史真实场景；其 SQLite/hash72 路径只能作为任务 011 的知识线索，实施前必须增量完成来源/许可证审计，不能采用旧闭源签名桥。
 
 ### BP-INIT-003：FooPodBridge 目标方案
 
@@ -197,7 +200,7 @@ FooPodBridge 保留“缺库时建立空模型”的思路，改成显式、安�
 1. **任务 003/004，电脑侧数据库能力**：给定格式配置，可以在临时目录生成零曲目、仅含合法 master Library 的传统或 6G/hash58 数据库并往返验证。
 2. **任务 005，只读设备分类**：识别 `Initializable`，发布原因和所需能力；不创建目录。
 3. **任务 007，初始化事务**：提供 `InitializeLibrary` Operation Plan，生成恢复记录、电脑侧产物、设备暂存和读回验证。
-4. **任务 008/009，实机接受**：先在有外部备份、明确授权的 Nano 4 实验机建立完整纵向能力；Photo/Classic 等其他型号按可用硬件和验证等级补充，不阻断共同能力实现。
+4. **任务 008/012，实机接受**：先在有外部备份、明确授权的 Nano 4 实验机建立完整纵向能力；其他家族按可用硬件和验证等级补充。缺少硬件不阻断任务 009–011 的来源、profile 和 fixture 实现。
 
 首次导入可以包含初始化，但“仅仅插入设备”永远不会初始化。没有存储卷或需要 Apple Restore 的设备不进入此流程。
 
@@ -207,7 +210,7 @@ Windows 格式化卷不等于 Apple Restore，也不能可靠模拟出厂状态�
 
 - `APPLE`：[Restore your iPhone, iPad, or iPod to factory settings using a computer](https://support.apple.com/en-us/118107)。该页面说明 Restore 是擦除并安装设备软件；具体旧 click-wheel 型号的可用工具仍需在实机任务中核对。
 
-## 8. Photo、Classic 和其他数据库家族
+## 8. 全非 touch 目标的数据库家族
 
 ### BP-FMT-001：格式配置，而不是巨大型号 switch
 
@@ -222,7 +225,9 @@ Windows 格式化卷不等于 Apple Restore，也不能可靠模拟出厂状态�
 
 设备能力配置选择格式配置；营销名称不能直接调用某个 Writer。
 
-### BP-FMT-002：Photo
+设备 profile 是数据库/签名能力描述，不是某台实机配置。注册表可以把多个产品型号映射到同一 profile 候选，但只有数据库证据匹配后才能选择 Writer；稳定设备 ID 只作为签名输入和物理身份，不参与硬编码分支。
+
+### BP-FMT-002：传统共同核心与 Photo 起点
 
 Photo 先建立传统 `iTunesDB` 的共同往返核心。任务 003 只在电脑 fixture/临时目录完成读取、无修改往返、损坏拒绝、虚拟增删和空库生成，不连接实机。
 
@@ -238,11 +243,23 @@ Classic 与 Nano 3/4 在共同核心上增加 6G 记录差异和 hash58。历史
 - `LG`：[`libgpod/README.overview`](https://github.com/fadingred/libgpod/blob/master/README.overview) 的设备矩阵把 Classic、Nano 3G、Nano 4G 列为 hash58-only，把 Nano 5G 单独列为 hash58 + hash72 + SQLite + iTunesCDB。
 - `DEV`：[`../docs/device-evidence/NANO4_20260908_BASELINE.md`](device-evidence/NANO4_20260908_BASELINE.md) 记录纯净 Windows 挂载、私有 fixture 和验证备份；完整标识与数据库内容不进入 Git。
 
-### BP-FMT-004：Shuffle、Nano 5+ 与 iOS 路径
+### BP-FMT-004：早期全尺寸、Mini、Photo/Video 与 Nano 1/2
 
-Shuffle 不是“没有屏幕的普通 Classic”。历史代码除主数据库外还按能力写 `iTunesSD` 或 ShadowDB：[`foo_dop/writer_itunessd.cpp`](../../Ref/ipod_manager/foo_dop/writer_itunessd.cpp) 第 11–164、166–449 行。Shuffle 只有在新任务取得合法证据、硬件和独立格式配置后才能加入。
+这些目标设备共享部分传统 `iTunesDB` 概念，但不能在缺少证据时假定只换产品代码即可共用 Writer。任务 009 先建立来源矩阵，再按实际记录版本、端序、目录路径、数据库压缩/拆分、必需 dataset、固件和初始化行为拆分 profile；有合法 fixture 时完成往返，没有 fixture 时保持 `StructureKnown`/`FormatPending`。
 
-历史 SQLite writer 位于 [`foo_dop/writer_sqlite.cpp`](../../Ref/ipod_manager/foo_dop/writer_sqlite.cpp)，涉及本项目禁止的 Nano 5 hash72/CBK 与旧 iOS 路径，只作为范围反例，不作为当前待办实现。Nano 4 不属于这条 SQLite 路线。
+早期滚轮/FireWire 代际、Mini、Photo/Color、Video 和 Nano 1/2 的营销边界不直接等于数据库边界。共同领域模型可以复用，Reader/Writer/Validator 的具体合同必须由至少两个独立历史来源或来源加 fixture 支撑。
+
+### BP-FMT-005：Shuffle 独立数据库家族
+
+Shuffle 不是“没有屏幕的普通 Classic”。历史代码除主数据库外还按能力写 `iTunesSD` 或 ShadowDB：[`foo_dop/writer_itunessd.cpp`](../../Ref/ipod_manager/foo_dop/writer_itunessd.cpp) 第 11–164、166–449 行。Shuffle 始终属于目标；任务 010 取得合法来源和独立格式配置后可以提升结构/fixture 能力，只有实机证据等级需要真实硬件。
+
+任务 010 必须按代际识别播放顺序数据库、文件布局和能力差异；没有实机时允许推进来源与 fixture 等级，但任何实机写入仍单独授权。Shuffle 始终属于产品目标，证据不足时是 `FormatPending`，不是被排除。
+
+### BP-FMT-006：Nano 5+ 非 touch 的 CDB/SQLite/签名路线
+
+历史 SQLite writer 位于 [`foo_dop/writer_sqlite.cpp`](../../Ref/ipod_manager/foo_dop/writer_sqlite.cpp)，证明 Nano 5 与传统 hash58 Writer 不是同一路线，但其中 hash72/CBK、`iTunesCrypt` 和旧 iOS 调用不能直接采用。任务 011 先增量重开任务 001，冻结合法来源与原创/允许实现边界，再分别实现 `iTunesCDB`、SQLite 关系、签名和代际能力；合法签名能力未解决时只能读取/诊断，不能退回 hash58 猜写。
+
+Nano 4 不属于该路线；iPod touch、iPhone、iPad 和 Apple Mobile Device 通信继续排除。Nano 5+ 中只有实际能被 Windows 暴露为可访问存储卷的非 touch 设备进入运行时管理。
 
 ## 9. 音乐导入与元数据
 
@@ -342,13 +359,15 @@ FooPodBridge 原创规则模型和编辑器。只有目标型号实机确认的�
 
 只有第四级可以宣传“已验证可写”。iPod manager 识别过某个型号，只能提高 `StructureKnown` 的可信度，不能自动把 FooPodBridge 提升到第四级。活动任务可以在前三级设备上批准一次受控实验写入，但 UI 和文档必须继续显示 Experimental，直到重启播放和恢复验收完成。
 
-### BP-SUP-002：当前范围
+### BP-SUP-002：强制目标范围与当前证据
 
-- 传统未签名家族：任务 003 建立共同核心；Photo、Mini、早期 click-wheel、Nano 1/2 按参考与后续 fixture 分级；
+- 目标范围：所有 Windows 可挂载存储卷模式的非 iPod touch；自动发现、家族注册表和明确状态是任务 005 的硬要求；
+- 早期/传统家族：任务 003 建立共同核心，任务 009 为早期全尺寸、Mini、Photo/Color/Video、Nano 1/2 等按证据拆分 profile；
 - 6G/hash58 家族：任务 004 建立签名 profile；Nano 4 是当前点名实验机，Classic 与 Nano 3 使用相同家族但保持各自验证等级；
-- 其他已识别 click-wheel：有固定参考和匹配 profile 时可显示 Experimental/ReadOnly，没有足够证据时 Unsupported；
-- Shuffle：独立数据库家族，未来另建任务；
-- Nano 5、iPod touch、iPhone、iPad：当前明确排除。
+- Shuffle：任务 010 建立 `iTunesSD`/ShadowDB 等独立 profile；
+- Nano 5+ 非 touch：任务 011 建立 CDB/SQLite/签名独立 profile，许可证或签名证据不足时保持 `FormatPending`/ReadOnly；
+- iPod touch、iPhone、iPad 与 Apple Mobile Device/iOS 路径明确排除；
+- 任一目标设备没有匹配 profile 时显示只读诊断/`FormatPending`，不能因当前没有实机而从注册表或 UI 静默消失。
 
 ## 13. 永久任务映射
 
@@ -360,13 +379,16 @@ FooPodBridge 原创规则模型和编辑器。只有目标型号实机确认的�
 | 006 FooCrate 只读 UI | 只参考可观察信息 | 真实服务快照、无服务隐藏、无旧 panel 代码 | `BP-FLOW-001`、`BP-SUP-*` |
 | 007 事务/恢复 | temp + backup 的基本动机 | 完整安全状态机、故障注入、初始化事务 | `BP-TXN-*`、`BP-INIT-003` |
 | 008 Nano 4 实验导入 | Send Files 的批次骨架、字段线索 | Operation Plan、一次 USB 写入、Nano 4 已有库加一首/删除/重启/恢复验收 | `BP-IMP-*`、`BP-FLOW-002` |
-| 009 家族扩展验收 | Photo/Classic writer、gapless 线索 | 可用实机按等级补充；Classic 加准确 gapless，未到手型号不阻断 Nano 4 主线 | `BP-FMT-002/003`、`BP-IMP-004` |
-| 010 删除 | 引用清理线索 | DB-first 删除与 orphan 报告 | `BP-DEL-001` |
-| 011 普通 playlist | playlist 数据关系 | 统一事务、复用 track ID、明确三种删除语义 | `BP-PL-001` |
-| 012 Artwork | ArtworkDB/ithmb/共享引用线索 | 原创图像实现、能力格式、引用安全 | `BP-ART-001` |
-| 013 Audiobook | media kind、bookmark、chapter 字段 | 用户明确分类、FAT32 预检、设备能力 | `BP-AUD-001` |
-| 014 Smart Playlist | 规则、编辑和成员计算线索 | 原创模型、能力拒绝、实机 Live 语义 | `BP-SPL-001` |
-| 018 诊断/备份 | 历史属性和单备份仅作线索 | 脱敏诊断、Last Known Good、恢复入口 | `BP-TXN-*`、`BP-REF-001` |
+| 009 早期/传统 profile | 早期 writer、设备表与记录版本 | 分型矩阵、独立 profile、fixture 往返、跨 profile 拒绝 | `BP-FMT-001/002/004`、`BP-SUP-*` |
+| 010 Shuffle profile | `iTunesSD`/ShadowDB 路由与文件布局 | 独立 Reader/Writer/Validator、代际能力和证据门禁 | `BP-FMT-005`、`BP-SUP-*` |
+| 011 Nano 5+ profile | CDB/SQLite 历史结构只作知识线索 | 增量许可证审计、原创/允许签名实现、独立 profile 与 fixture 往返 | `BP-FMT-006`、`BP-SUP-*` |
+| 012 跨家族验收 | 各家族 writer、gapless 线索 | 可用实机按等级补充；Classic 加准确 gapless，未到手型号保持较低等级 | `BP-FMT-*`、`BP-IMP-004` |
+| 013 删除 | 引用清理线索 | DB-first 删除与 orphan 报告 | `BP-DEL-001` |
+| 014 普通 playlist | playlist 数据关系 | 统一事务、复用 track ID、明确三种删除语义 | `BP-PL-001` |
+| 015 Artwork | ArtworkDB/ithmb/共享引用线索 | 原创图像实现、能力格式、引用安全 | `BP-ART-001` |
+| 016 Audiobook | media kind、bookmark、chapter 字段 | 用户明确分类、FAT32 预检、设备能力 | `BP-AUD-001` |
+| 017 Smart Playlist | 规则、编辑和成员计算线索 | 原创模型、能力拒绝、实机 Live 语义 | `BP-SPL-001` |
+| 021 诊断/备份 | 历史属性和单备份仅作线索 | 脱敏诊断、Last Known Good、恢复入口 | `BP-TXN-*`、`BP-REF-001` |
 
 每个任务开始时只需读取本表对应章节和引用，不要求重新通读整个 iPod manager。若任务发现蓝图错误，先记录新证据并更新本蓝图，再修改任务结论。
 

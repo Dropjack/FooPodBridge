@@ -12,12 +12,12 @@
 
 ## 当前进度
 
-- 当前任务：[`004-实现 6G/hash58 与 Nano 4 格式核心`](004-实现6G-hash58与Nano4格式核心/README.md)
-- 状态：规格核对中
-- 当前阶段：任务 003 已验收；任务 004 开始定义 Nano 3/4 与 Classic 的 hash58 签名 profile、私有设备 ID 边界和电脑侧验证合同
+- 当前任务：[`005-实现全目标家族注册表、Windows 自动发现与只读服务`](005-实现全目标家族注册表与Windows自动发现只读服务/README.md)
+- 状态：待讨论
+- 当前阶段：任务 000 已按全非 touch 目标重开并验收；任务 004 的通用 Hash58/profile 实现、范围复评和电脑侧验证已于 2026-09-10 获用户验收
 - 同日实机补充：用户所称 iPod 5.5G 也在纯净 Windows 直接挂载 119 GiB FAT32 volume；Device/iTunes/Artwork 私有 fixture 已完成 19 文件、470,402,770 字节的源/fixture及采集前后 SHA-256 零差异验证，当前只作为 `TraditionalPreserveOnly` 输入
-- 当前下一步：完成任务 004 的实现规格；算法、格式和测试由 Codex 负责，只有一次性只读取得 Nano 4 稳定 FireWire GUID 可能需要用户重新接入设备
-- 当前禁止：不创建假设备或空 UI；不手工修改 Nano 4，不为未挂载设备开启或恢复磁盘模式，不访问 `foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读
+- 当前下一步：用户回到设备环境后，从任务 005 的输入、自动识别状态、家族注册表和只读验收步骤开始核对；规格获批前不实现生产设备扫描
+- 当前禁止：任务 005 只读，不创建假设备或空 UI，不修改任何 iPod，不为未挂载设备开启或恢复磁盘模式，不访问 `foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读
 
 ## 状态定义
 
@@ -41,23 +41,26 @@
 | 001 | [完成参考源码与许可证审计](001-完成参考源码与许可证审计/README.md) | 已验收 | 文件级来源矩阵、许可证与允许复用边界 |
 | 002 | [建立 x64 组件工程与服务合同](002-建立x64组件工程与服务合同/README.md) | 已验收 | 可安装组件、Core targets、版本化服务 ABI、包审计 |
 | 003 | [实现传统 iTunesDB 共同往返核心](003-实现iPodPhoto数据库往返核心/README.md) | 已验收 | Reader/Model/Writer/Validator、未签名 profile、Nano 4 私有 fixture 的共同记录输入 |
-| 004 | [实现 6G/hash58 与 Nano 4 格式核心](004-实现6G-hash58与Nano4格式核心/README.md) | 规格核对中 | Classic/Nano 3/4 签名 profile、hash58 向量和 Nano 4 fixture 往返 |
-| 005 | 实现 Windows 设备发现与只读服务 | 待讨论 | 设备身份、能力矩阵、Library 快照、热插拔生命周期 |
+| 004 | [实现 6G/hash58 与 Nano 4 格式核心](004-实现6G-hash58与Nano4格式核心/README.md) | 已验收 | 通用 6G/hash58 profile、hash58 向量和 Nano 4 fixture 证据；不含设备专用配置 |
+| 005 | [实现全目标家族注册表、Windows 自动发现与只读服务](005-实现全目标家族注册表与Windows自动发现只读服务/README.md) | 待讨论 | 所有可挂载非 touch iPod 的识别/分类、设备身份、证据门禁、Library 快照与热插拔生命周期 |
 | 006 | 实现 FooCrate 只读 Devices 工作区 | 待讨论 | 使用真实服务数据的首个 FooCrate 设备 UI |
 | 007 | 实现设备事务、备份与故障恢复核心 | 待讨论 | 文件系统故障注入、Operation Plan、恢复状态机 |
 | 008 | 完成 Nano 4 实验性 Music 导入 | 待讨论 | 备份、加一首、删除、重启播放和恢复的第一条实机纵向能力 |
-| 009 | 扩展 Photo/Classic 等家族实机验收 | 待讨论 | 可用设备按验证等级补充，Classic 增加准确 gapless |
-| 010 | 完成设备曲目删除与孤立资源清理 | 待讨论 | 两种删除语义、DB-first 删除、已批准清理策略 |
-| 011 | 完成普通设备播放列表管理 | 待讨论 | 新建/编辑/删除/排序、foobar playlist 手动发送 |
-| 012 | 完成 Music artwork 管理 | 待讨论 | Photo/Classic 封面格式、共享引用与安全清理 |
-| 013 | 完成 Audiobook 导入与章节属性 | 待讨论 | Audiobook namespace、bookmark、shuffle、章节与 4 GiB 预检 |
-| 014 | 完成原生 iPod Smart Playlist 编辑器 | 待讨论 | 设备规则模型、编辑器、初始成员、Live/刷新语义 |
-| 015 | 完成 FooCrate 写入与传输体验 | 待讨论 | 正式 Device Workspace、计划、进度、结果、取消、恢复与句柄释放状态 |
-| 016 | 完成独立 Columns UI Device Panel | 待讨论 | 不依赖 FooCrate 的完整 Columns UI 入口 |
-| 017 | 完成简化 Default UI Element | 待讨论 | Default UI 原生入口与统一管理对话框 |
-| 018 | 完成 Preferences、诊断与备份管理 | 待讨论 | 设置迁移、脱敏诊断、Last Known Good 与清理入口 |
-| 019 | 完成稳定性、性能与生命周期验证 | 待讨论 | 压力、USB 中断、热插拔、缓存、隐私与性能证据 |
-| 020 | 打包并发布首个完整版本 | 待讨论 | 双组件候选、全量回归、安装升级、许可证与发布材料 |
+| 009 | 实现早期与传统 iTunesDB 家族 profile | 待讨论 | 早期全尺寸、Mini、Photo/Color/Video、Nano 1/2 的分型证据、Reader/Writer/Validator 与 fixture 往返 |
+| 010 | 实现 Shuffle 独立数据库家族 | 待讨论 | `iTunesSD`/ShadowDB 代际 profile、能力门禁与 fixture 往返 |
+| 011 | 实现 Nano 5+ 非 touch 独立数据库家族 | 待讨论 | `iTunesCDB`/SQLite/签名合法来源审计、独立 profile 与 fixture 往返 |
+| 012 | 扩展跨家族实机验收与能力矩阵 | 待讨论 | 可用设备按验证等级补充，Classic 增加准确 gapless；无实机家族保持较低等级 |
+| 013 | 完成设备曲目删除与孤立资源清理 | 待讨论 | 两种删除语义、DB-first 删除、已批准清理策略 |
+| 014 | 完成普通设备播放列表管理 | 待讨论 | 新建/编辑/删除/排序、foobar 曲目选择加入设备 playlist |
+| 015 | 完成 Music artwork 管理 | 待讨论 | 按家族能力处理封面格式、共享引用与安全清理 |
+| 016 | 完成 Audiobook 导入与章节属性 | 待讨论 | Audiobook namespace、bookmark、shuffle、章节与 4 GiB 预检 |
+| 017 | 完成原生 iPod Smart Playlist 编辑器 | 待讨论 | 设备规则模型、编辑器、初始成员、Live/刷新语义 |
+| 018 | 完成 FooCrate 写入与传输体验 | 待讨论 | 正式 Device Workspace、计划、进度、结果、取消、恢复与句柄释放状态 |
+| 019 | 完成独立 Columns UI Device Panel | 待讨论 | 不依赖 FooCrate 的完整 Columns UI 入口 |
+| 020 | 完成简化 Default UI Element | 待讨论 | Default UI 原生入口与统一管理对话框 |
+| 021 | 完成 Preferences、诊断与备份管理 | 待讨论 | 设置迁移、脱敏诊断、Last Known Good 与清理入口 |
+| 022 | 完成稳定性、性能与生命周期验证 | 待讨论 | 压力、USB 中断、热插拔、缓存、隐私与性能证据 |
+| 023 | 打包并发布首个完整版本 | 待讨论 | 双组件候选、全量回归、安装升级、许可证与发布材料 |
 
 详细目标、依赖、检查点和任务拆分理由见 [`TODO.md`](TODO.md)。
 

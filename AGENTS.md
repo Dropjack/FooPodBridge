@@ -68,7 +68,8 @@ Do not silently keep retrying or switch to a lower-quality workaround.
 
 # Device-write safety
 
-- Real-device support is evidence-tiered. Only a positively identified user-owned device named by the active device task may enter an experimental write path; public support claims must distinguish reference-backed, fixture-verified, read-verified, and write-verified models.
+- The target device range is every non-iPod-touch iPod that Windows exposes as an accessible storage volume, including early full-size iPod, mini, photo/video/classic, nano, and shuffle families. Discovery is automatic; missing local hardware or an unimplemented database profile must reduce capability/evidence, not silently remove a family from the product target.
+- Real-device support is evidence-tiered. Only a positively identified user-owned device named by the active device task may enter an experimental write path; public support claims must distinguish reference-backed, fixture-verified, read-verified, and write-verified models. A real device validates its format/profile variant and must not become a device-specific product configuration.
 - Unknown devices remain read-only. A reference-backed but not write-verified model may be written only in an explicitly scoped experiment after its format profile, stable identity, recovery plan, and external backup are verified; there is no generic UI override.
 - Before the first real write to each physical device, require and verify a recoverable backup as defined by `docs/SAFETY_MODEL.md` and the active task.
 - UI code never writes device files directly. Every mutation goes through the core transaction service.

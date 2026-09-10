@@ -21,10 +21,11 @@ This file records both the third-party source in the current build and audited s
 
 ## libgpod hash58
 
-- Status: audited and planned for task 004; not present in the task 002 binary.
-- Copyright: Copyright (c) 2007-2010, Christophe Fergeau.
+- Status: used by the task 004 Core database target; the current component module does not yet link that target.
+- Copyright: Copyright (C) 2007, Christophe Fergeau.
 - Source: `gtkpod/libgpod`, commit `7982c5554f78dde47fd006afbeff659201d6db3d`, `src/itdb_hash58.c`.
 - License: [`LICENSES/BSD-3-Clause.txt`](LICENSES/BSD-3-Clause.txt).
+- Local adaptation: `src/core/database/hash58.cpp`; rewritten in C++20 without GLib and retaining the complete BSD-3-Clause notice.
 
 ## Columns UI SDK
 

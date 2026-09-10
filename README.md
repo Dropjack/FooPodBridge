@@ -1,8 +1,8 @@
 # FooPodBridge
 
-FooPodBridge 是面向 Windows x64、foobar2000 2.x 和磁盘模式 click-wheel iPod 的原生设备管理组件。项目建立全新的 x64 架构，只把 `foo_dop / iPod manager` 作为数据库知识和可观察行为参考，不移植其旧 x86、iOS 或历史 UI 结构。
+FooPodBridge 是面向 Windows x64、foobar2000 2.x 和 Windows 可挂载存储卷模式非 iPod touch 设备的原生 iPod 管理组件。项目建立全新的 x64 架构，只把 `foo_dop / iPod manager` 作为数据库知识和可观察行为参考，不移植其旧 x86、iOS 或历史 UI 结构。
 
-当前目标按数据库家族实现、按证据等级验证 click-wheel iPod。Nano 4 是首台可牺牲实验机；Photo、Classic 和其他历史支持型号按 `StructureKnown / FixtureRoundTrip / DeviceReadVerified / DeviceWriteVerified` 分级，不把参考支持冒充实机验证，未知设备始终拒绝写入。
+正式目标覆盖所有能被 Windows 暴露为可访问存储卷的非 iPod touch，包括早期全尺寸 iPod、Mini、Photo/Video/Classic、Nano 与 Shuffle；设备默认进入自动识别和只读分类。数据库能力按家族实现，并按 `StructureKnown / FixtureRoundTrip / DeviceReadVerified / DeviceWriteVerified` 分级。Nano 4 和当前其他实机只验证对应格式/profile 变体，不成为产品专用配置；未知或证据不足设备始终拒绝写入。
 
 FooPodBridge 本身是独立组件，FooCrate 不是安装或运行依赖。项目最终提供三种可选界面适配器：
 

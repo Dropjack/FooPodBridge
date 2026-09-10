@@ -1,13 +1,13 @@
 # FooPodBridge 产品目标
 
 - 状态：已批准
-- 日期：2026-09-09
+- 日期：2026-09-10
 - 对应总规格：[`../specs/PRODUCT_SPEC.md`](../specs/PRODUCT_SPEC.md)
 - 当前决策任务：[`../tasks/000-确定项目目标与全部产品决策/README.md`](../tasks/000-确定项目目标与全部产品决策/README.md)
 
 ## 1. 项目为什么存在
 
-现代 foobar2000 x64 无法加载旧版 x86 `foo_dop / iPod manager`。用户希望在 FooCrate 和普通 foobar2000 UI 中重新获得 click-wheel iPod 的手动音乐管理能力，同时避免 iTunes 的媒体库、商店、账户、自动同步和现代 Apple Music 负担。
+现代 foobar2000 x64 无法加载旧版 x86 `foo_dop / iPod manager`。用户希望在 FooCrate 和普通 foobar2000 UI 中重新获得非 iPod touch 的手动音乐管理能力，同时避免 iTunes 的媒体库、商店、账户、自动同步和现代 Apple Music 负担。
 
 本项目不是把旧插件勉强编译成 x64，也不是复刻 iTunes 全部历史功能。它建立新的 x64 Core、事务安全模型和现代 UI 适配层，只复用已经被历史项目验证的 iPod 数据格式知识和算法。
 
@@ -15,14 +15,14 @@
 
 优先级从高到低固定为：
 
-1. 项目维护者当前可用的 click-wheel iPod 实验机可以可靠日常使用，并以设备家族和证据等级逐步扩展；
+1. 所有能被 Windows 暴露为可访问存储卷的非 iPod touch 都进入正式目标、自动发现和明确能力分类；数据库与写入能力再按家族和证据等级逐步实现；
 2. 任意中断点优先保护设备数据库和可恢复性；
 3. FooCrate 集成体验完整、直接、容易理解；
 4. 每项开发任务都能独立解释、测试和验收；
 5. 独立 Columns UI 和 Default UI 让 FooPodBridge 脱离 FooCrate 仍可使用；
-6. 其他型号可以依据 iPod manager/libgpod 和 fixture 建立实验支持，不要求每个型号都由维护者逐台购买；公开说明必须标出验证等级。
+6. 没有维护者实机的型号必须继续依据 iPod manager/libgpod、其他合法来源和 fixture 建立结构/往返支持，不要求逐台购买；公开说明必须标出验证等级。
 
-项目不会为了 GitHub 上潜在用户牺牲真实设备的可靠性，也不会把参考支持或 fixture 通过宣传成实机写入已验证。
+当前 Nano 4、iPod 5.5G 或以后取得的实机只用于验证对应数据库/签名/profile 变体；它们不能把产品目标收窄成具体设备配置。项目不会为了扩大兼容表牺牲真实设备的可靠性，也不会把参考支持或 fixture 通过宣传成实机写入已验证。
 
 ## 3. 完整产品目标
 
@@ -44,7 +44,9 @@
 
 ## 4. 已批准的产品行为
 
+- 强制设备范围包含早期全尺寸 iPod、Mini、Photo/Color/Video/Classic、Nano 与 Shuffle，只排除 iPod touch；前提始终是 Windows 已暴露可访问存储卷。连接后默认自动识别，不要求用户先选择型号配置。
 - 设备按数据库家族和验证等级扩展；正式“已验证可写”只授予完成本项目实机写入、重启播放和恢复检查的型号/设备配置。
+- 未实现格式、证据不足或识别不完整不会让目标家族消失：设备仍进入只读诊断/明确的 `FormatPending` 或 Unsupported 状态，服务层拒绝写入并说明缺少哪一级证据或能力。
 - 参考支持但未完成 FooPodBridge 实机验收的型号可以提供明确标识的 Experimental 路径；每台实验机第一次写入仍需活动任务、稳定身份、外部基线和恢复计划。
 - 纯手动管理；没有后台同步、媒体库镜像或一键 Sync。
 - 不双向同步播放次数、评分、跳过次数或播放位置；评分仅按用户明确操作从 Playback Statistics 单向导出，设备端改动不反写电脑。
@@ -53,7 +55,7 @@
 - 实现真正的原生 iPod Smart Playlist 编辑器，不用普通 playlist 冒充。
 - foobar/FooCrate playlist 对象不发送或拖入设备；普通设备 playlist 由用户明确 New 后加入曲目，原生 Apple Smart Playlist 只通过规则编辑器创建和编辑。
 - Podcasts、Video、Photo、iPhone、iPod touch 和云内容不在产品范围内。
-- 未识别或能力不明设备显示 Unsupported 并拒绝所有写入；已识别且参考支持的设备可以显示 Read-only 或 Experimental，不得冒充已验证。
+- 未识别或能力不明设备显示只读诊断状态并拒绝所有写入；已识别且参考支持的设备可以显示 Read-only、Format pending 或 Experimental，不得冒充已验证。
 - 只管理 Windows 已暴露为可访问存储卷的磁盘模式 iPod；关闭或未默认开启“用作磁盘”的设备停在 `NotMounted`，不由 FooPodBridge 修改其配置。
 
 ## 5. 明确排除
@@ -66,7 +68,7 @@
 - 依赖 iTunes、Apple Music 或 Apple 账户才能执行日常导入；
 - 启动或控制 iTunes、更改 iPod 的“用作磁盘”设置，或通过私有命令启用未暴露的存储卷；
 - 修改 foobar2000 核心、C 盘日常安装或只读参考目录；
-- 把未实测 Nano、Shuffle、Mini 或其他型号宣传为“已验证可写”；参考支持和明确受控的实验写入不属于兼容承诺。
+- 把未实测 Nano、Shuffle、Mini 或其他型号宣传为“已验证可写”；这些家族仍属于必须实施的目标，参考支持和明确受控的实验写入不属于兼容承诺。
 
 ## 6. 仍由用户决定的产品方向
 
@@ -104,12 +106,12 @@ FooCrate 在自己的独立组件中消费 FooPodBridge 服务，提供重点维
 
 产品达到首个完整可用版本时：
 
-1. 用户能在 FooCrate 中插入已识别的磁盘模式 click-wheel iPod，查看真实设备 Library、容量、播放列表和准确验证等级；
+1. 用户插入任一 Windows 已挂载的非 iPod touch 后，FooPodBridge 自动识别或给出明确的只读分类；已具备 Reader 的设备可以查看真实 Library、容量、播放列表和准确验证等级；
 2. 用户能把兼容音频手动导入 Music 或 Audiobooks，并看到准确进度与结果；
 3. 用户能安全删除曲目、管理普通播放列表和 Smart Playlist；
 4. SoundCheck、Classic gapless、封面和 Audiobook 属性在实机上工作；
 5. 任意模拟写入失败都不会让旧数据库变成不可启动状态；
-6. 每个声明“已验证可写”的数据库家族至少有一台点名实机完成添加、删除、播放列表、重启设备和再次连接回归；其他型号保持 Experimental 或更低等级；
+6. 早期传统、6G/hash58、Shuffle、Nano 5+ 等目标家族都在家族注册表和任务路线中有明确 profile/证据状态；每个声明“已验证可写”的数据库家族至少有一台点名实机完成添加、删除、播放列表、重启设备和再次连接回归，其他型号保持 Experimental 或更低等级；
 7. 独立 Columns UI 与 Default UI 可以调用相同能力；
 8. 所有候选只在 FooCrate 双隔离实例测试，C 盘日常 foobar2000 从未被触碰；
 9. 组件包不包含 Apple/foobar2000 闭源文件、来源不明二进制或用户设备数据。

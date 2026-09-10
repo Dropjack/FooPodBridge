@@ -1,8 +1,8 @@
 # FooPodBridge 用户决策清单
 
 - 状态：当前路线所需决定已批准；明确延后与正式版前重开项保留
-- 日期：2026-09-09
-- 当前任务：[`../tasks/003-实现iPodPhoto数据库往返核心/README.md`](../tasks/003-实现iPodPhoto数据库往返核心/README.md)
+- 日期：2026-09-10
+- 当前任务：[`../tasks/005-实现全目标家族注册表与Windows自动发现只读服务/README.md`](../tasks/005-实现全目标家族注册表与Windows自动发现只读服务/README.md)
 - 作用：这是影响产品行为、设备数据、UI 或公开发布的唯一决策清单
 
 ## 1. 使用方法
@@ -24,8 +24,9 @@
 | DEC-ARCH-001 | 重建路线 | 建立全新 x64 架构，只从 foo_dop/libgpod 提取已验证知识和许可证兼容算法 |
 | DEC-ARCH-002 | Core 边界 | `device/database/media/transaction` 不依赖 foobar 或 UI，可独立测试 |
 | DEC-ARCH-003 | 组件边界 | FooPodBridge 与 FooCrate 是两个组件，通过版本化 foobar 服务连接 |
-| DEC-DEV-001 | 设备范围与验证 | 按数据库家族实现、按 `StructureKnown / FixtureRoundTrip / DeviceReadVerified / DeviceWriteVerified` 分级；只有第四级宣传“已验证可写”，点名实验机可在独立任务和完整备份门槛下受控写入，未知设备拒绝写入 |
+| DEC-DEV-001 | 设备范围与验证 | 所有 Windows 可挂载存储卷模式的非 iPod touch 都属于强制目标并默认自动识别；按数据库家族实现、按 `StructureKnown / FixtureRoundTrip / DeviceReadVerified / DeviceWriteVerified` 分级，只有第四级宣传“已验证可写”，未知或证据不足设备拒绝写入 |
 | DEC-DEV-002 | 磁盘模式前置 | 只管理 Windows 已暴露为可访问存储卷的 iPod；未开启或被关闭“用作磁盘”均不在产品处理范围，不配置 iPod、不控制 iTunes、不发送私有启用命令 |
+| DEC-DEV-003 | 实机与 profile 边界 | 实机/私有 fixture 只验证对应格式与能力，不能成为设备专用生产配置；早期 iPod、Shuffle、Nano 5+ 必须作为独立家族路线进入注册表、格式实现和证据矩阵 |
 | DEC-SCOPE-001 | 管理方式 | 纯手动音乐管理，不提供媒体库镜像、后台同步或一键 Sync |
 | DEC-SCOPE-002 | 媒体范围 | Music 与 Audiobooks；排除 Podcasts、Video、Photo、iPhone 和 iPod touch |
 | DEC-SCOPE-003 | 播放数据 | 不双向同步播放次数、评分、跳过次数和播放位置 |
@@ -73,6 +74,19 @@
 用户于 2026-09-09 确认：前一日完成新状态 Nano 4 测试，设备接入电脑时默认自动开启“用作磁盘”；随后在从未安装 iTunes 的电脑上只读确认该设备仍直接挂载 FAT32 volume，并完成源/备份/采集前后逐文件 SHA-256 零差异验证。这些证据支持 Nano 4 主线的普通接入流程，但不外推到所有型号、固件或用户设置。
 
 状态：已批准（2026-09-09）。无论某台设备默认不开启、用户后续关闭，还是外部软件改变了该设置，只要 Windows 当前没有提供可访问的受支持存储卷，FooPodBridge 就停在 `NotMounted`。它可以说明“磁盘模式存储卷是前置条件”，但不提供 iTunes 式的 iPod 配置、启用、恢复或绕过功能。
+
+### DEC-DEV-003：全非 touch 目标与实机/profile 边界
+
+用户于 2026-09-10 重开任务 000 并批准以下强制标准：
+
+1. 所有能被 Windows 暴露为可访问存储卷的非 iPod touch 都属于正式产品目标，包括早期全尺寸 iPod、Mini、Photo/Color/Video/Classic、各代 Nano 和 Shuffle；
+2. 候选卷默认自动发现和识别，不要求用户选择维护者当前设备的专用配置；
+3. 自动识别不等于默认写入。未实现格式、未知 profile 或证据不足时只能发布只读诊断、`FormatPending`、Read-only 或 Experimental 状态，由服务层拒绝未经授权写入；
+4. 实机和私有 fixture 只验证与其证据相符的数据库、签名、记录版本和能力。生产代码不得用当前 Nano、Classic、私有样本字节或某台稳定 ID 硬编码通用行为；
+5. 早期/传统数据库、6G/hash58、Shuffle、Nano 5+ 必须作为独立家族进入架构和任务路线。共享 Reader/领域模型不代表共享 Writer 或写入证据；
+6. Nano 5+ 进入目标不改变许可证边界：hash72/CBK 等能力实施前必须完成合法来源增量审计，`iTunesCrypt.dll` 和 Apple Mobile Device/iOS 路径继续禁止。
+
+状态：已批准（2026-09-10）。该决定替换“Photo/Classic 实机优先可以收窄大众型号路线”的旧解释；现有实机仍可决定验证顺序，但不能决定产品范围。
 
 ## 3. 必须提供的实机证据
 
@@ -386,7 +400,7 @@
 - B：完全不采用参考源码，只依据格式知识重写，再评估更宽松许可证。
 - C：暂不公开源码并保留全部权利。
 
-状态：已批准并完成审计验收（2026-08-28），采用 A。FooCrate 保持 MIT；FooPodBridge 原创源码使用 `LGPL-3.0-or-later`；唯一计划修改采用的第三方算法是 libgpod `src/itdb_hash58.c`，该文件保持 `BSD-3-Clause`；FooPodBridge/FooCrate 共享服务合同使用本项目原创 `0BSD`；foo_dop 与 libgpod 其余候选源码只作知识参考后原创实现。`iTunesCrypt.dll`、旧 SDK、iOS 与 hash72/CBK 路径保持禁止。文件级证据、许可证版本、保留声明和任务 002–014 采用边界以 [`../docs/REFERENCE_PROVENANCE.md`](../docs/REFERENCE_PROVENANCE.md) 为准；若后续需要复制未获批准的第三方表达，必须先重开任务 001。
+状态：已批准并完成既有审计验收（2026-08-28），采用 A。FooCrate 保持 MIT；FooPodBridge 原创源码使用 `LGPL-3.0-or-later`；当前唯一获准修改采用的第三方算法是 libgpod `src/itdb_hash58.c`，该文件保持 `BSD-3-Clause`；FooPodBridge/FooCrate 共享服务合同使用本项目原创 `0BSD`；foo_dop 与 libgpod 其余已审计候选源码只作知识参考后原创实现。`iTunesCrypt.dll`、旧 SDK 和 iOS 路径永久禁止；hash72/CBK 或 Nano 5+ 新来源在任务 011 实施前必须增量重开任务 001，未被产品范围修订自动授权。文件级证据、许可证版本和保留声明以 [`../docs/REFERENCE_PROVENANCE.md`](../docs/REFERENCE_PROVENANCE.md) 为准。
 
 ### DEC-PKG-002：候选发布节奏
 
@@ -398,7 +412,7 @@
 
 ## 9. 路线批准
 
-状态：已批准（2026-08-28）。用户默认认同 [`tasks/TODO.md`](../tasks/TODO.md) 的建议路线，并选择在进入具体任务时按需提问；后续新证据仍可在受影响任务开始前显式重开对应决定。
+状态：已批准并于 2026-09-10 重开修订。用户批准 [`tasks/TODO.md`](../tasks/TODO.md) 的全非 touch 目标路线；现有实机决定验证顺序但不收窄产品范围，后续新证据仍可在受影响任务开始前显式重开对应决定。
 
 完成上述决定后，用户还需核对 [`tasks/TODO.md`](../tasks/TODO.md) 中每个永久任务的目标、依赖和实机检查点。任务 000 只有在以下条件全部满足时才能标记“已验收”：
 

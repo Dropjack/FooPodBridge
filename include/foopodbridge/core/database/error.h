@@ -32,6 +32,14 @@ enum class error_code {
     generated_output_invalid,
     comparison_mismatch,
     invalid_edit,
+    missing_device_key,
+    invalid_device_key_length,
+    invalid_device_key_character,
+    hash_field_out_of_bounds,
+    invalid_hash_scheme,
+    missing_hash58,
+    hash58_mismatch,
+    unsupported_signed_profile,
 };
 
 struct database_error {

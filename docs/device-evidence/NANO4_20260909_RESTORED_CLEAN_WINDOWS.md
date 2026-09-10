@@ -2,7 +2,7 @@
 
 - 日期：2026-09-09
 - 设备：用户自有 16 GB iPod Nano 4
-- 状态：只读采集完成
+- 状态：只读采集与 hash58 fixture 签名验证完成
 - 到货前基线：[`NANO4_20260908_BASELINE.md`](NANO4_20260908_BASELINE.md)
 - Restore 交接：[`NANO4_ITUNES_RESTORE_HANDOFF.md`](NANO4_ITUNES_RESTORE_HANDOFF.md)
 - 私有数据：完整备份和 fixture 位于 Git 忽略目录，不随源码发布
@@ -94,5 +94,9 @@ Device/iTunes 私有 fixture 已复制到：
 - iTunes/Apple 运行时不再是 Nano 4 日常读写路径的产品依赖；
 - 磁盘模式存储卷仍是外部硬前置；没有卷时停在 `NotMounted`；
 - 任务 003 现在有“非空到货库”和“Restore 后空库”两份 Nano 4 私有输入，可验证共同结构和 preserve-only 行为；
-- 任务 004 可以比较同一设备两种真实数据库 header/签名保留区，但仍需稳定设备 ID 和 hash58 独立验证；
+- 任务 004 已通过 Windows PnP 只读取得稳定签名输入，并在不输出或落盘该值的前提下验证同一设备两份 fixture 的 hash58；
 - 第一次真实写入仍由任务 007/008 的事务、备份、唯一测试曲目和明确授权阻断。
+
+## 8. 2026-09-10 hash58 更新
+
+用户明确授权后，只读查询当前连接的 Apple iPod PnP 身份。唯一 16 字符十六进制候选同时验证 Restore 空库和到货非空库的 hash58；Debug/Release 私有测试均通过。完整身份只在查询/测试进程内存在，未输出、未落盘、未进入 Git，设备文件没有被读取或修改。详情见 [`../../tasks/004-实现6G-hash58与Nano4格式核心/REPORT.md`](../../tasks/004-实现6G-hash58与Nano4格式核心/REPORT.md)。

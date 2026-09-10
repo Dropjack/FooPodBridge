@@ -39,6 +39,7 @@ foreach(core_module IN ITEMS device media transaction)
 endforeach()
 
 add_library(foopodbridge_core_database STATIC
+  src/core/database/hash58.cpp
   src/core/database/reader.cpp
   src/core/database/edit.cpp
   src/core/database/writer.cpp
@@ -47,7 +48,7 @@ add_library(foopodbridge_core_database STATIC
 )
 target_link_libraries(foopodbridge_core_database PUBLIC foopodbridge_core)
 target_include_directories(foopodbridge_core_database PUBLIC include)
-target_compile_options(foopodbridge_core_database PRIVATE /W4 /WX /permissive- /Zc:__cplusplus /utf-8)
+target_compile_options(foopodbridge_core_database PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
 
 add_library(foopodbridge_contract STATIC
   src/contract/service_guids.cpp
@@ -110,12 +111,12 @@ if(BUILD_TESTING)
   target_link_libraries(foopodbridge_component_identity_tests PRIVATE ole32)
   add_test(NAME component_identity COMMAND foopodbridge_component_identity_tests)
 
-  foreach(database_test IN ITEMS reader writer corruption private_fixture)
+  foreach(database_test IN ITEMS reader writer corruption hash58 private_fixture)
     add_executable(foopodbridge_database_${database_test}_tests
       tests/database_${database_test}_tests.cpp
     )
     target_link_libraries(foopodbridge_database_${database_test}_tests PRIVATE foopodbridge_core_database)
-    target_compile_options(foopodbridge_database_${database_test}_tests PRIVATE /W4 /WX /permissive- /Zc:__cplusplus /utf-8)
+    target_compile_options(foopodbridge_database_${database_test}_tests PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
     add_test(NAME database_${database_test} COMMAND foopodbridge_database_${database_test}_tests)
   endforeach()
   target_compile_definitions(foopodbridge_database_private_fixture_tests PRIVATE

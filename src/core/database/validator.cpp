@@ -18,9 +18,16 @@ result<validation_report> validator::validate(const database_document& document)
         return result<validation_report>::failure(make_error(
             error_code::missing_master_playlist, 0U, "mhyp", "model/master", "master playlist has the wrong kind"));
     }
-    if (document.source_profile == profile_kind::traditional_unsigned && document.model.persistent_id == 0U) {
+    if ((document.source_profile == profile_kind::traditional_unsigned ||
+         document.source_profile == profile_kind::traditional_hash58) &&
+        document.model.persistent_id == 0U) {
         return result<validation_report>::failure(make_error(
-            error_code::duplicate_persistent_id, 0U, "mhbd", "model", "unsigned profile requires a nonzero database persistent ID"));
+            error_code::duplicate_persistent_id, 0U, "mhbd", "model", "writable profile requires a nonzero database persistent ID"));
+    }
+    if (document.source_profile == profile_kind::traditional_hash58 &&
+        document.hash58_status == hash58_signature_status::invalid) {
+        return result<validation_report>::failure(make_error(
+            error_code::hash58_mismatch, 0x58U, "mhbd", "model/hash58", "hash58 signature is invalid"));
     }
 
     std::unordered_set<std::uint32_t> track_ids;

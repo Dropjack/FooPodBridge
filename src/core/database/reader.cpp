@@ -218,10 +218,13 @@ struct dataset_view {
 
 }  // namespace
 
-result<database_document> reader::read(
+namespace {
+
+[[nodiscard]] result<database_document> read_database(
     std::span<const std::byte> bytes,
     const format_profile& profile,
-    std::string_view source_label) const {
+    const hash58_device_key* device_key,
+    std::string_view source_label) {
     (void)source_label;
     if (bytes.size() > profile.maximum_input_bytes) {
         return result<database_document>::failure(make_error(
@@ -252,12 +255,38 @@ result<database_document> reader::read(
         return result<database_document>::failure(make_error(
             error_code::unsupported_container, 12U, "mhbd", "root/format", "only the uncompressed traditional format is supported"));
     }
+    if (profile.kind == profile_kind::traditional_hash58) {
+        if (root_header != profile.root_header_size) {
+            return result<database_document>::failure(make_error(
+                error_code::unsupported_signed_profile, 4U, "mhbd", "root/header",
+                "hash58 profile requires the selected fixed mhbd header variant"));
+        }
+        if (bytes[0x30U] != std::byte{1} || bytes[0x31U] != std::byte{0}) {
+            return result<database_document>::failure(make_error(
+                error_code::invalid_hash_scheme, 0x30U, "mhbd", "root/hash58",
+                "hash58 profile requires scheme 1"));
+        }
+        const auto version = read_u32(bytes, 16U);
+        if (version != 49U && version != 115U) {
+            return result<database_document>::failure(make_error(
+                error_code::unsupported_signed_profile, 16U, "mhbd", "root/version",
+                "hash58 reader supports only the observed version 49 and 115 variants"));
+        }
+    }
 
     database_document document;
     document.source_profile = profile.kind;
     document.original_bytes.assign(bytes.begin(), bytes.end());
     document.model.persistent_id = read_u64(bytes, 24U);
     document.root = record_node{read_marker(bytes, 0U), root_header, root_section, 0U, true};
+    if (profile.kind == profile_kind::traditional_hash58) {
+        document.hash58_status = hash58_signature_status::not_checked;
+        if (device_key != nullptr) {
+            document.hash58_status = verify_hash58(*device_key, bytes)
+                ? hash58_signature_status::valid
+                : hash58_signature_status::invalid;
+        }
+    }
     const auto dataset_count = read_u32(bytes, 20U);
     const auto root_end = static_cast<std::size_t>(root_section);
     if (dataset_count > (root_end - root_header) / 16U) {
@@ -297,6 +326,12 @@ result<database_document> reader::read(
             return result<database_document>::failure(make_error(
                 error_code::header_too_small, list_offset, marker_string(list_marker), "root/dataset/list", "list header is invalid"));
         }
+        if (profile.kind == profile_kind::traditional_hash58 &&
+            (dataset_header != profile.dataset_header_size || list_header != profile.list_header_size)) {
+            return result<database_document>::failure(make_error(
+                error_code::unsupported_signed_profile, dataset_offset, "mhsd", "root/dataset",
+                "hash58 dataset or list header does not match the selected profile"));
+        }
 
         record_node dataset_node{read_marker(bytes, dataset_offset), dataset_header, dataset_section, dataset_offset, recognized_list};
         dataset_node.children.push_back(record_node{
@@ -311,11 +346,21 @@ result<database_document> reader::read(
             type,
             count,
             child_index});
-        if (type != 1U && type != 2U) {
+        if (type != 1U && type != 2U && type != 3U && !(type == 4U && count == 0U)) {
             document.diagnostics.push_back({dataset_offset, "root/dataset", "opaque dataset preserved"});
             document.has_opaque_dependency = true;
         }
         dataset_offset = dataset_end;
+    }
+    if (profile.kind == profile_kind::traditional_hash58) {
+        constexpr std::array<std::uint32_t, 4> required_types{4U, 1U, 3U, 2U};
+        if (datasets.size() < required_types.size() ||
+            !std::equal(required_types.begin(), required_types.end(), datasets.begin(),
+                [](std::uint32_t expected, const dataset_view& actual) { return expected == actual.type; })) {
+            return result<database_document>::failure(make_error(
+                error_code::unsupported_signed_profile, root_header, "mhsd", "root/datasets",
+                "hash58 profile requires leading dataset types 4, 1, 3, 2 in that order"));
+        }
     }
     if (dataset_offset != root_end) {
         document.diagnostics.push_back({dataset_offset, "root", "root trailing bytes preserved"});
@@ -340,6 +385,11 @@ result<database_document> reader::read(
                 bytes, record_offset, track_dataset->end, "root/tracks/track", node, document.diagnostics);
             if (!parsed) {
                 return result<database_document>::failure(parsed.error());
+            }
+            if (profile.kind == profile_kind::traditional_hash58 && node.header_size != 584U) {
+                return result<database_document>::failure(make_error(
+                    error_code::unsupported_signed_profile, record_offset, "mhit", "root/tracks/track",
+                    "hash58 track record does not use the observed 584-byte header"));
             }
             record_offset += static_cast<std::size_t>(node.section_size);
             list_node.children.push_back(std::move(node));
@@ -369,6 +419,12 @@ result<database_document> reader::read(
             if (!parsed) {
                 return result<database_document>::failure(parsed.error());
             }
+            if (profile.kind == profile_kind::traditional_hash58 &&
+                node.header_size != 140U && node.header_size != 184U) {
+                return result<database_document>::failure(make_error(
+                    error_code::unsupported_signed_profile, record_offset, "mhyp", "root/playlists/playlist",
+                    "hash58 playlist record does not use an observed 140-byte or 184-byte header"));
+            }
             record_offset += static_cast<std::size_t>(node.section_size);
             list_node.children.push_back(std::move(node));
             if (parsed.value().kind == playlist_kind::master) {
@@ -390,6 +446,23 @@ result<database_document> reader::read(
         document.has_opaque_dependency = true;
     }
     return result<database_document>::success(std::move(document));
+}
+
+}  // namespace
+
+result<database_document> reader::read(
+    std::span<const std::byte> bytes,
+    const format_profile& profile,
+    std::string_view source_label) const {
+    return read_database(bytes, profile, nullptr, source_label);
+}
+
+result<database_document> reader::read(
+    std::span<const std::byte> bytes,
+    const format_profile& profile,
+    const hash58_device_key& device_key,
+    std::string_view source_label) const {
+    return read_database(bytes, profile, &device_key, source_label);
 }
 
 }  // namespace foopodbridge::core::database

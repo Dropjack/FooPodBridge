@@ -1,8 +1,8 @@
 # FooPodBridge 产品总规格
 
 - 状态：已批准基线
-- 版本：0.2
-- 日期：2026-09-09
+- 版本：0.3
+- 日期：2026-09-10
 - 产品目标：[`../docs/PRODUCT_GOAL.md`](../docs/PRODUCT_GOAL.md)
 - 架构：[`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
 - 安全模型：[`../docs/SAFETY_MODEL.md`](../docs/SAFETY_MODEL.md)
@@ -12,7 +12,7 @@
 
 ## 1. 产品定义
 
-FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为磁盘模式 click-wheel iPod 提供读取、手动音乐导入、删除、播放列表、Smart Playlist、封面、SoundCheck、gapless 和 Audiobook 能力。
+FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为 Windows 已挂载存储卷模式的非 iPod touch 提供读取、手动音乐导入、删除、播放列表、Smart Playlist、封面、SoundCheck、gapless 和 Audiobook 能力。
 
 产品不是 iTunes 媒体库或 iPod 配置功能的替代品，不执行自动 Sync；它把 iPod 作为独立设备 namespace，而不是 foobar Playlist Manager 中的一组普通 playlist。
 
@@ -28,11 +28,13 @@ FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为磁盘模式 clic
 - 当前验证基线为 foobar2000 2.25.10 stable 与 Columns UI 3.5.0；
 - FooPodBridge 以 `FooPodBridge-<version>.fb2k-component` 安装；
 - FooCrate 是另一个组件，通过 FooPodBridge 服务连接，不捆绑或自动安装 FooPodBridge；
-- FooPodBridge 不要求安装 iTunes、Apple Music 或 Apple Mobile Device Support 才能发现和管理已经由 Windows 暴露为受支持文件系统卷、且本项目已具备所需设备属性和签名能力的 click-wheel iPod；
+- FooPodBridge 不要求安装 iTunes、Apple Music 或 Apple Mobile Device Support 才能发现已经由 Windows 暴露为可访问存储卷的非 iPod touch；管理能力取决于该设备的数据库 profile、证据等级和写入门禁；
 - Windows 当前暴露可访问的存储卷是硬前置。若“用作磁盘”未默认开启、被用户或外部软件关闭，FooPodBridge 不负责更改设置、启动或控制 iTunes，也不通过私有命令让设备进入磁盘模式；
 - 组件包不得包含 foobar2000、Apple DLL、x86 `iTunesCrypt.dll`、用户数据库或未经许可二进制。
 
 ## 3. 支持设备
+
+正式目标范围是所有能被 Windows 暴露为可访问存储卷的非 iPod touch，包括早期全尺寸 iPod、Mini、Photo/Color/Video/Classic、各代 Nano 和 Shuffle。候选卷默认进入自动发现与正向识别；用户不需要选择一份针对当前实验机的配置。缺少本地硬件、fixture 或 Writer 只能让能力停在较低等级，不能把整个家族从产品目标和任务路线删除。
 
 ### 验证等级
 
@@ -45,13 +47,15 @@ FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为磁盘模式 clic
 
 允许写入不是按产品名称字符串决定，而是按物理设备身份、固件、数据库类型、文件系统、签名输入、能力矩阵和活动任务共同决定。每台设备第一次写入前必须完成对应 `EVID-DEV-*`。
 
-当前数据库家族边界：
+数据库家族必须分别建模，当前已知路线至少包括：
 
-- 传统未签名 `iTunesDB`：Photo、Mini、较早 click-wheel 与 Nano 1/2 等候选型号，按证据逐项建立 profile；
+- 早期/传统 `iTunesDB`：早期全尺寸、Mini、Photo/Color/Video 与 Nano 1/2 等候选型号；不能假定它们只换一份型号配置，按记录版本、端序、路径、数据库与固件证据拆 profile；
 - 签名传统 `iTunesDB`：Classic、Nano 3/4 等候选型号，共享 6G 记录骨架与 hash58，但型号能力仍分开验证；
-- Shuffle：`iTunesSD`/ShadowDB 独立路线；
-- Nano 5 及以后涉及 `iTunesCDB`、SQLite、hash72/CBK 的路径暂不进入当前实现；
+- Shuffle：`iTunesSD`、ShadowDB 和代际差异属于独立数据库路线；
+- Nano 5+ 非 touch：`iTunesCDB`、SQLite 和相应签名/能力属于独立路线；hash72/CBK 只有在合法来源增量审计和原创/允许实现方案冻结后才能进入代码，禁止使用旧闭源 `iTunesCrypt.dll`；
 - iPhone、iPod touch、Apple Mobile Device 和现代 iOS 数据库路径不支持。
+
+实机或私有 fixture 只提升与其证据匹配的 profile/型号能力，不能生成以设备名称、样本字节或某台稳定 ID 为条件的生产配置。尚未实现数据库的已识别目标设备显示 `FormatPending`/Read-only，未识别卷显示只读诊断状态；两者都由服务层拒绝写入。
 
 ## 4. 设备发现与概览
 
@@ -64,7 +68,7 @@ FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为磁盘模式 clic
 3. 读取容量、可用空间、型号、固件和能力；
 4. 读取 Library、playlist 和 artwork 索引；
 5. 发布一个不可变设备快照和代次；
-6. UI 显示 Ready、Read-only 或 Unsupported 及原因。
+6. UI 显示 Ready、Read-only、Format pending 或 Unsupported 及原因和证据等级。
 
 盘符不是稳定设备身份。设备移除或重新挂载后旧快照立即失效。
 
@@ -193,7 +197,7 @@ Compilation 明确标签优先；没有明确值时，使用规范化的原始 A
 
 Smart Playlist 成员完全由规则计算，不接受手工拖入曲目。foobar autoplaylist 对象不能发送、拖入、快照或翻译；用户仍可选择其中曲目执行普通导入或加入普通设备 playlist。只有实机确认的规则组合显示 Live Updating；可保存但不能实时重算的规则明确标记 Refresh on next connection 并由用户主动刷新；不支持规则拒绝保存。
 
-Rating 规则使用设备原生 Rating，而不是在设备端执行 foobar 查询。首要用户场景包括 `Rating = 2/3/4/5`，以及设备能力允许时的 `Rating = N AND Artist = value`；每个目标型号对字段、运算符和 Live Updating 的准确支持仍须通过任务 014 的数据库往返与实机验证冻结。
+Rating 规则使用设备原生 Rating，而不是在设备端执行 foobar 查询。首要用户场景包括 `Rating = 2/3/4/5`，以及设备能力允许时的 `Rating = N AND Artist = value`；每个目标型号对字段、运算符和 Live Updating 的准确支持仍须通过任务 017 的数据库往返与实机验证冻结。
 
 ## 14. 删除
 
@@ -302,7 +306,7 @@ FooCrate、独立 Columns UI 和 Default UI 分别完成其批准范围的日常
 
 ## 22. 当前批准门槛
 
-以下门槛已于 2026-08-28 满足，本规格成为任务 001 以后使用的已批准基线。后续实机证据或任务级发现可以显式重开受影响决定，但不能静默改变本规格。
+以下门槛于 2026-08-28 首次满足；设备目标范围于 2026-09-10 重开并以版本 0.3 重新批准。本规格继续作为任务 001 以后使用的已批准基线。后续实机证据或任务级发现可以显式重开受影响决定，但不能静默改变本规格。
 
 本规格的批准条件为：
 

@@ -1,7 +1,7 @@
 # FooPodBridge 正式架构
 
 - 状态：已批准的架构边界，接口细节等待任务 000 决策完成
-- 日期：2026-08-28
+- 日期：2026-09-10
 - 产品目标：[`PRODUCT_GOAL.md`](PRODUCT_GOAL.md)
 - 安全模型：[`SAFETY_MODEL.md`](SAFETY_MODEL.md)
 - 历史实现中文蓝图：[`IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md`](IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md)
@@ -21,7 +21,7 @@
 
 ```mermaid
 flowchart LR
-    IPOD["click-wheel iPod\nWindows 存储卷"]
+    IPOD["非 iPod touch\nWindows 存储卷"]
     CORE["FooPodBridge Core\ndevice · database · media · transaction"]
     SERVICE["FooPodBridge foobar 服务\n快照 · 能力 · 异步操作"]
     CUI["独立 Columns UI\nDevice Panel"]
@@ -60,7 +60,8 @@ foo_crate.dll
 职责：
 
 - 接收 Windows 卷到达、移除和盘符变化；
-- 识别 iPod 目录结构、设备文件、固件、格式和稳定物理身份；
+- 对每个候选卷自动执行正向 iPod 识别；识别 iPod 目录结构、设备文件、固件、格式和稳定物理身份；
+- 维护覆盖早期全尺寸、Mini、Photo/Video/Classic、Nano 与 Shuffle 的家族注册表；尚未实现的数据库 profile 也必须返回明确的只读 `FormatPending` 能力，不能从发现结果中消失；
 - 生成设备能力矩阵，而不是只按显示名称猜型号；
 - 提供受约束的文件系统访问；
 - 监测设备在长操作中是否仍是同一台、同一次挂载；
@@ -73,8 +74,9 @@ foo_crate.dll
 职责：
 
 - 解析和序列化传统 `iTunesDB`、播放列表、曲目与相关设备数据库；
-- 以数据库家族建立可扩展格式 profile：传统未签名 `iTunesDB`、6G/hash58 签名 `iTunesDB`，并把 Shuffle 与 Nano 5+ 新数据库路径隔离；
+- 以数据库家族建立可扩展格式 profile：早期/传统 `iTunesDB`、6G/hash58 签名 `iTunesDB`、Shuffle 的 `iTunesSD`/ShadowDB 变体，以及 Nano 5+ 的 `iTunesCDB`/SQLite/签名变体；这些 profile 共享领域模型时也保持独立解析、序列化和验证边界；
 - 型号能力和验证等级独立于格式 profile；同一 Reader/Writer 可以被多个型号复用，但不能因此自动继承实机写入结论；
+- fixture 或实机只向注册表提供可审计证据，不能生成以设备名、私有样本或稳定 ID 硬编码的生产分支；
 - 保留当前实现尚不理解但设备需要的记录和字段，防止无意删除；
 - 管理 master playlist、普通 playlist 和 Smart Playlist 引用；
 - 处理 Classic、Nano 3/4 等签名传统数据库候选设备所需的 hash58；
@@ -130,6 +132,7 @@ foobar 适配层负责：
 
 - `DeviceSnapshot`：某一时刻不可变的设备身份、容量、能力、Library 与状态；
 - `CapabilityMatrix`：该设备允许哪些格式、数据库、封面、gapless、Smart Playlist 和写入行为；
+- `EvidenceLevel`：profile/型号当前达到 StructureKnown、FixtureRoundTrip、DeviceReadVerified 或 DeviceWriteVerified 的哪一级，以及哪些能力因此被门禁；
 - `OperationRequest`：UI 表达的用户意图；
 - `OperationPlan`：预检后的明确文件、空间、冲突、警告和预计结果；
 - `OperationHandle`：异步执行、进度、取消请求和最终结果；
@@ -142,6 +145,7 @@ foobar 适配层负责：
 - 服务只接受用户意图，不暴露“写某个数据库偏移”之类危险接口；
 - 所有写操作异步执行，进度与结果具有稳定操作 ID；
 - 服务版本不兼容时消费者明确隐藏写入并提示，不猜测 ABI。
+- 自动发现只承诺识别/分类，不自动授予写入；`FormatPending`、未知 profile 和签名能力不足均保持只读。
 
 ## 5. UI 适配器
 

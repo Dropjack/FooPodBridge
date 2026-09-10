@@ -1,9 +1,9 @@
 # iPod Nano 4 纯净 Windows 与到货基线
 
 - 日期：2026-09-08
-- 后续更新：2026-09-09 已确认新状态设备默认开启“用作磁盘”，并冻结未挂载设备不属于产品配置范围
+- 后续更新：2026-09-09 已确认新状态设备默认开启“用作磁盘”；2026-09-10 已只读取得稳定签名输入并验证到货/Restore 两份 fixture
 - 设备角色：用户自有、允许破坏性实验的 16 GB iPod Nano 4
-- 当前结论：外部基线已验证；只读结构证据已采集；尚未授权任何具体设备写入动作
+- 当前结论：外部基线、只读结构与 hash58 fixture 签名已验证；尚未授权任何具体设备写入动作
 - 私有数据：完整备份和原始 fixture 位于 Git 忽略目录，不随源码发布
 - 后续验证结论：[`NANO4_ITUNES_RESTORE_HANDOFF.md`](NANO4_ITUNES_RESTORE_HANDOFF.md)
 
@@ -79,9 +79,6 @@
 
 ## 6. 当前阻断项
 
-- 任务 003 Reader/Model/Writer/Validator 尚未实现；
-- 任务 004 hash58 与 Nano 4 格式 profile 尚未实现；
-- Windows 稳定设备身份、固件与签名输入尚未取得；
 - 任务 007 事务和故障注入尚未实现；
 - 尚未点名唯一测试音频和阶段 D 唯一写入动作。
 
@@ -92,3 +89,9 @@
 用户于 2026-09-09 确认：新状态 Nano 4 接入电脑时默认自动开启“用作磁盘”，记为 `MountedByDefault`。随后已在从未安装 iTunes 的电脑完成只读复测、完整备份和私有 fixture，见 [`NANO4_20260909_RESTORED_CLEAN_WINDOWS.md`](NANO4_20260909_RESTORED_CLEAN_WINDOWS.md)。
 
 产品决定独立于这台 Nano 4 的结果：FooPodBridge 只管理 Windows 已经暴露为可访问存储卷的磁盘模式 iPod。默认不开启、被用户关闭或被外部软件改变而没有存储卷的设备，均停在 `NotMounted`；不为此扩展 iTunes 式配置功能。
+
+## 8. 2026-09-10 hash58 只读交叉验证
+
+用户明确授权后，只读查询 Windows PnP 中当前连接的 Apple iPod。唯一匹配身份尾部为 16 个十六进制字符，使用该值在进程内同时验证到货非空库和 Restore 空库的 hash58 成功。完整值未输出、未落盘、未进入 Git，测试后已清除进程环境；没有读取或修改设备文件。
+
+这把当前 Nano 4 的 hash58 能力提升为限定于签名输入与已有 fixture 的 `DeviceReadVerified` 证据，但不构成新数据库已被固件接受，更不授权实机写入。实现与脱敏比较见 [`../../tasks/004-实现6G-hash58与Nano4格式核心/REPORT.md`](../../tasks/004-实现6G-hash58与Nano4格式核心/REPORT.md)。

@@ -1,7 +1,7 @@
 # 任务 004：6G/hash58 与 Nano 4 格式核心实现规格
 
-- 状态：规格核对中
-- 日期：2026-09-09
+- 状态：已验收（2026-09-10）
+- 日期：2026-09-09；2026-09-10 完成固定来源与私有 fixture 的实现前复核
 - 任务入口：[`README.md`](README.md)
 - 前置实现：[`../003-实现iPodPhoto数据库往返核心/SPEC.md`](../003-实现iPodPhoto数据库往返核心/SPEC.md)
 - 来源边界：[`../../docs/REFERENCE_PROVENANCE.md`](../../docs/REFERENCE_PROVENANCE.md) 的 `LG-H58-01`、`LG-DEV-01`、`FD-CRYPT-01`
@@ -10,18 +10,22 @@
 
 在任务 003 的纯内存 database Core 上增加 `TraditionalHash58` profile。调用方给出传统 6G 数据库模型、严格解析后的设备密钥和确定生成上下文后，Writer 可以生成带 hash58 的字节；独立 verifier 必须能用同一设备密钥验证，错误密钥或任意受保护字节篡改必须失败。
 
-本任务完成后仍不访问 Windows 设备、不写盘符、不部署组件，也不证明 iPod 固件实际接受新数据库。任务 005 才把生产设备身份和 profile 选择接入只读服务；任务 008 才允许点名 Nano 4 的首次受控写入。
+该 profile 是按数据库/签名能力定义的永久家族能力，不是 Nano 4 或当前 Classic 的专用配置。Nano 4 私有 fixture 与稳定 ID 只能证明匹配输入符合此 profile；生产 API 不接收营销型号，不读取 fixture，不按设备名或某个稳定 ID 分支。Nano 5+ 非 touch 属于产品目标，但其 CDB/SQLite/签名路径由任务 011 单独实现，不能复用本任务 Writer 猜写。
+
+本任务的生产代码不访问 Windows 设备、不写盘符、不部署组件，也不证明 iPod 固件实际接受新数据库。经用户单独授权，验收阶段只读查询了一次 Windows PnP 身份并只在进程内交叉验证私有 fixture；任务 005 才把生产设备身份和 profile 选择接入只读服务，任务 008 才允许点名 Nano 4 的首次受控写入。
 
 ## 2. 格式能力
 
 `profile_kind` 增加 `traditional_hash58`：
 
 - root 使用传统 `mhbd` 容器和 244 字节 header；
-- hash58 是 root header 从 `0x58` 开始的 20 字节字段；
-- hash 输入是完整数据库字节，计算前只把 hash58 字段置零；
+- `0x30..0x31` 是小端 hash scheme，hash58 profile 必须为 `1`；`0x58..0x6b` 是 20 字节 hash58 字段；
+- hash 输入是完整数据库的规范化视图。计算前临时把数据库 ID `0x18..0x1f`、预哈希保留块 `0x32..0x45` 和 hash58 `0x58..0x6b` 置零，并把 `0x30..0x31` 设为小端 `1`；计算完成后恢复数据库 ID 和预哈希保留块，只把新签名写入 `0x58..0x6b`；
 - 现有数据库中 `0x72` 与 `0xAB` 开始的保留区不被解释为 hash72/CBK，未修改节点必须原字节保留；
 - 新生成的 hash58-only 数据库不调用或生成 hash72/CBK/SQLite 数据；
-- profile 明确声明 6G track/playlist header 尺寸和必需 dataset，不能只因 root header 长 244 就猜测设备家族。
+- profile 明确声明 6G track/playlist header 尺寸和 dataset 合同，不能只因 root header 长 244 就猜测设备家族；
+- 当前 Nano 4 fixture 固定观察到 dataset 顺序 `4/1/3/2/5`：album list、track list、两份 playlist 视图和 special playlists。固定历史 Writer 证明前四类是 6G 基础结构，type 5 只在 special playlists 有效时出现；因此公开空库必须生成前四类，不能为了凑成五类伪造私有 special-playlist 内容。真实 fixture 中存在的 type 5 继续原字节保留，并在依赖未建模时阻断语义修改；
+- Reader 必须接受 fixture 已观察到的 6G 记录版本差异：非空库 `mhit` header 584、`mhyp` header 140，Restore 后 `mhyp` header 184。Writer 的新生成版本由 profile 明确选择，不能从文件大小或营销型号猜测。
 
 Reader 观察到合法 hash58 envelope 不等于授予可写能力。只有显式 `TraditionalHash58`、有效设备密钥、Validator 通过且无不安全 opaque 依赖时才允许生成。
 
@@ -37,6 +41,8 @@ Reader 观察到合法 hash58 envelope 不等于授予可写能力。只有显�
 
 任务 004 的 Nano 4 fixture 交叉验证需要一次真实密钥，但密钥只进入 Git 忽略的本机测试输入或当前进程，不写进公开 golden vector。
 
+同一值对象可以服务任何被设备层和证据矩阵确认采用 hash58 的目标设备；“能解析为 16 个十六进制字符”本身不构成 profile 选择或写入授权。
+
 ## 4. hash58 模块
 
 允许修改采用固定 libgpod commit 的 `src/itdb_hash58.c` 算法与常量，正式文件必须：
@@ -50,31 +56,34 @@ Reader 观察到合法 hash58 envelope 不等于授予可写能力。只有显�
 公开函数分为三步，便于独立测试：
 
 1. `parse_hash58_device_key`：严格文本输入到私有值对象；
-2. `compute_hash58`：设备值 + 已把签名字段归零的数据库字节到 20 字节签名；
-3. `verify_hash58`：复制输入、归零签名字段、常量时间比较期望值。
+2. `compute_hash58`：设备值 + 原始数据库字节到 20 字节签名；函数内部按第 2 节建立规范化 hash 视图，调用方不能自行猜测清零范围；
+3. `verify_hash58`：以同一规范化规则流式计算并常量时间比较期望值，不修改输入，也不为 512 MiB 上限再复制一份完整数据库。
+
+key derivation 仍单独可测：按固定 libgpod 算法对 8 字节设备值的四个字节对计算 LCM，经两张固定 256 字节表映射成 16 字节，再计算 `SHA-1(fixed[18] || mapped[16])` 得到 20 字节 HMAC key。正式源码保留上游两张表、固定常量和完整 BSD-3-Clause 声明；除这一已批准文件外不复制 libgpod 表达。
 
 ## 5. Reader、Validator 与 Writer
 
 Reader：
 
 - 输入小于 `0x6c`、root/header 越界或错误 marker 按任务 003 错误模型拒绝；
+- `TraditionalHash58` 要求 root header 至少覆盖 `0x6c`，hash scheme 必须为 `1`；不能把 scheme `0/2/3` 猜成 hash58；
 - 保存原始 hash58 与保留区，不把签名内容写入普通 diagnostics；
 - 未提供设备密钥时可以结构化读取，但签名状态为 `not_checked`；
 - 提供密钥后状态只有 `valid / invalid`，不能把失败降级成可写 warning。
 
 Validator：
 
-- 检查 `TraditionalHash58` 与 root/header/dataset/6G 记录要求匹配；
+- 检查 `TraditionalHash58` 与 root/header/hash scheme/dataset/6G 记录要求匹配；
 - 任何修改输出必须拥有 `valid` 的新签名；
 - preserve-only 读取仍可不提供密钥，但不能转成 hash58 可写文档；
 - 错误设备密钥、零签名、签名长度错误或受保护字节变化返回稳定错误码。
 
 Writer：
 
-1. 先按任务 003 规则完整生成未签名字节；
+1. 先按任务 003 规则完整生成待签名字节；
 2. 保留或生成 profile 明确允许的 6G header/dataset；
-3. 把 `0x58..0x6b` 置零；
-4. 计算并写入 20 字节 hash58；
+3. 在不修改调用方文档的规范化视图中，临时清零 `0x18..0x1f`、`0x32..0x45`、`0x58..0x6b` 并把 `0x30..0x31` 设为小端 `1`；
+4. 对规范化整库计算 HMAC-SHA1，把 20 字节结果写入输出的 `0x58..0x6b`；输出保留真实 database ID 和 `0x32..0x45` 原值；
 5. 用全新 Reader、Validator 和 hash verifier 再读；
 6. Comparator 同时检查语义、未知保留区和签名外非允许变化；
 7. 失败时丢弃全部输出。
@@ -83,7 +92,7 @@ Writer 只返回内存字节。没有路径、临时文件、设备备份、提�
 
 ## 6. 空 Library 与现有 fixture
 
-电脑侧空 Library 需要调用方提供 database/master persistent ID、确定时间、`TraditionalHash58` profile 和设备密钥。输出必须包含 profile 要求的五类传统 dataset、零曲目 master Library 和有效 hash58。
+电脑侧空 Library 需要调用方提供 database/master persistent ID、确定时间、明确记录版本的 `TraditionalHash58` profile 和设备密钥。输出必须包含 type `4/1/3/2` 四类 6G 基础 dataset、两份语义一致的零曲目 master Library 和有效 hash58。type 5 special-playlist dataset 只有在调用方提供已建模内容时才能生成；本任务不能从私有 fixture 复制固定模板，也不能制造名称、规则或成员。
 
 两份 Nano 4 私有 fixture 分级使用：
 
@@ -102,6 +111,7 @@ Writer 只返回内存字节。没有路径、临时文件、设备备份、提�
 - `InvalidDeviceKeyLength`
 - `InvalidDeviceKeyCharacter`
 - `HashFieldOutOfBounds`
+- `InvalidHashScheme`
 - `MissingHash58`
 - `Hash58Mismatch`
 - `UnsupportedSignedProfile`
@@ -114,18 +124,18 @@ Writer 只返回内存字节。没有路径、临时文件、设备备份、提�
 
 - 固定设备值与固定字节输入的 key derivation、HMAC 和完整 hash58 golden vectors；
 - 大小写等价、长度 0–15/17+、非十六进制、前缀和空白拒绝；
-- hash 字段置零规则、错误密钥、单字节篡改、截断和全零签名；
+- database ID、`0x32` 预哈希块和 hash58 的规范化规则、hash scheme 强制为 `1`、错误密钥、单字节篡改、截断和全零签名；
 - 相同模型/上下文/密钥逐字节确定；
 - 签名后 Reader + Validator + verifier 通过；
 - 另一设备密钥不能验证；
-- 现有第二保留区 no-op 不变，禁止调用 hash72/CBK 路径；
+- 现有 `0x72`/`0xAB` 保留区 no-op 不变，禁止调用 hash72/CBK 路径；
 - x64、无 GLib、无外部运行时 DLL、来源声明和许可证检查。
 
 私有测试：
 
 - 三份现有真实数据库继续完成 preserve-only no-op；
 - 密钥存在时验证两份 Nano 4 输入的 hash58；
-- 用 Nano 4 profile 生成签名空 Library 并输出脱敏结构差异；
+- 用 Nano 4 profile 生成含四类基础 dataset 的签名空 Library 并输出脱敏结构差异；报告明确 Apple fixture 还含可选 type 5，不能把缺少未建模 special playlists 误报成数据丢失或固件接受证明；
 - fixture 或私有密钥缺失时公开 CI 跳过该交叉项并明确记录，不能伪造通过。
 
 Debug/Release 必须继续使用 `/W4 /WX /permissive- /Zc:__cplusplus /utf-8`，任务 002/003 全部回归继续通过。
@@ -138,4 +148,4 @@ Debug/Release 必须继续使用 `/W4 /WX /permissive- /Zc:__cplusplus /utf-8`�
 2. 任务 004 只在电脑端生成和验证签名，不写 iPod；
 3. Nano 4 fixture 验证通过只代表该 fixture/profile，其他 Classic/Nano 型号仍各自保留证据等级。
 
-批准后开始 C++ 实现、公开向量与私有 fixture 测试。实现进行到必须取得 Nano 4 稳定 ID 时，再给用户一条明确的接入指令；在此之前不需要用户操作设备。
+用户已于 2026-09-10 明确批准本规格。C++ 实现、公开向量与私有 fixture 测试现已获准；实现进行到必须取得 Nano 4 稳定 ID 时，再给用户一条明确的接入指令，在此之前不需要用户操作设备。

@@ -28,7 +28,7 @@ FooPodBridge 不以“复刻 iTunes、一次支持所有 iPod”为目标。完�
 3. **设备能力配置**：根据已取得的设备属性、数据库版本和固件证据决定可用能力；营销名称只作为辅助信息。
 4. **验证等级**：依次区分“结构已知、fixture 往返通过、实机只读通过、实机写入通过”，不能把较低等级宣传成完整支持。
 
-因此，架构按数据库家族扩展，并按 `StructureKnown / FixtureRoundTrip / DeviceReadVerified / DeviceWriteVerified` 显示证据等级。未知设备仍由服务层拒绝写入；点名的用户自有实验机可以在独立任务、完整备份和事务门槛下受控写入，但在完成实机验收前只能标为 Experimental。Shuffle、Nano 5+ 与 iOS 仍是独立路线。
+因此，架构按数据库家族扩展，并按 `StructureKnown / FixtureRoundTrip / DeviceReadVerified / DeviceWriteVerified` 显示证据等级。未知设备仍由服务层拒绝写入；点名的用户自有实验机可以在独立任务、完整备份和事务门槛下受控写入，但在完成实机验收前只能标为 Experimental。Shuffle 与 Nano 5+ 非 touch 是正式目标中的独立路线，iOS/iPod touch 继续排除。
 
 ## 历史实现采用方法
 

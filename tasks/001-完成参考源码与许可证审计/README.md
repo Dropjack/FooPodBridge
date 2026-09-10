@@ -1,9 +1,9 @@
 # 001-完成参考源码与许可证审计
 
-- 状态：已验收
-- 日期：2026-08-28
+- 状态：既有范围已验收；任务 010/011 新来源采用前需增量重开
+- 日期：2026-08-28；2026-09-10 记录新增审计范围
 - 前置任务：[`000-确定项目目标与全部产品决策`](../000-确定项目目标与全部产品决策/README.md) 已验收
-- 当前产物：文件级来源矩阵、许可证边界、任务 002–014 采用结论、证据与验证清单
+- 当前产物：既有文件级来源矩阵、许可证边界和采用结论；新增 Shuffle、Nano 5+ 来源的待审计门禁
 - 验收记录：用户于 2026-08-28 确认最终许可证与采用边界，并明确要求进入任务 002
 
 ## 1. 任务目标
@@ -20,7 +20,7 @@ FooPodBridge 计划使用 `LGPL-3.0-or-later`，FooCrate 保持 MIT，但这个�
 - 上游项目的官方仓库、具体 commit/tag、许可证全文和文件版权头；
 - [`REFERENCE_PROVENANCE.md`](../../docs/REFERENCE_PROVENANCE.md) 的现有初步记录；
 - [`USER_DECISIONS.md`](../../decisions/USER_DECISIONS.md) 的 `DEC-LIC-001`；
-- 后续任务 002–014 实际需要的数据库、设备、hash58、gapless、artwork 和 Smart Playlist 路径。
+- 原路线任务 002–014 实际需要的数据库、设备、hash58、gapless、artwork 和 Smart Playlist 路径；2026-09-10 新增的任务 010/011 在采用新来源前另做增量审计。
 
 本任务不读取或写入真实 iPod，不启动 foobar2000，不创建 CMake/C++，不复制第三方源码到正式目录，也不访问 C 盘日常安装。
 
@@ -51,7 +51,7 @@ FooPodBridge 计划使用 `LGPL-3.0-or-later`，FooCrate 保持 MIT，但这个�
 - FooPodBridge 最终 SPDX 许可证结论和适用理由；
 - FooCrate MIT、FooPodBridge LGPL 与原创共享服务合同的边界说明；
 - 正式仓库需要的 LICENSE/NOTICE/第三方声明清单；
-- 任务 002–014 每条参考能力的允许、限制或禁止结论；
+- 既有任务每条参考能力的允许、限制或禁止结论，以及任务 010/011 尚未解除的增量审计门禁；
 - 尚需 fixture、已知向量或实机验证的技术证据清单。
 
 ## 7. 自动与人工检查
@@ -71,7 +71,7 @@ FooPodBridge 计划使用 `LGPL-3.0-or-later`，FooCrate 保持 MIT，但这个�
 
 ## 8. 通过标准
 
-- 任务 002–014 所需参考路径都有文件级允许、限制或禁止结论；
+- 既有参考路径都有文件级允许、限制或禁止结论；新增 Shuffle、Nano 5+ 路径在采用前必须补齐同样结论；
 - `LGPL-3.0-or-later` 与实际采用文件兼容，或已回到 `DEC-LIC-001` 重新决定；
 - `iTunesCrypt.dll` 和其他来源不明二进制保持禁止；
 - foobar2000/Columns UI SDK 的使用与分发边界明确；
@@ -88,6 +88,8 @@ FooPodBridge 计划使用 `LGPL-3.0-or-later`，FooCrate 保持 MIT，但这个�
 
 本任务因此标记为“已验收”。原定由任务 002 补做的官方 foobar2000 SDK 包内 `sdk-license.txt` 复核已于 2026-08-29 完成，正文与本审计结论一致，不需要重开任务 001。
 
+2026-09-10 的产品范围修订不追认 hash72/CBK 或任何新第三方实现。任务 010/011 可以先进行规格、只读研究和来源盘点；在第三方表达或签名算法进入正式代码前，必须增量重开本任务并由用户核对。`iTunesCrypt.dll`、旧 `iPhoneCalc` 和 Apple Mobile Device/iOS 路径继续永久禁止。
+
 ## 10. 审计结果
 
 - 永久来源矩阵：[`../../docs/REFERENCE_PROVENANCE.md`](../../docs/REFERENCE_PROVENANCE.md)；
@@ -97,7 +99,7 @@ FooPodBridge 计划使用 `LGPL-3.0-or-later`，FooCrate 保持 MIT，但这个�
 - libgpod 其他候选文件是 LGPL-2.1-or-later，但本项目不复制，也不引入 GLib/GdkPixbuf；
 - dop-sdk 与 Columns UI SDK 的当前许可证为 0BSD；旧 dop-sdk 因不需要而不采用；
 - foobar2000 SDK 使用自定义 BSD 风格许可，记录为 `LicenseRef-foobar2000-SDK`，不误标标准 BSD-3-Clause；
-- 任务 002–014 的每条参考能力都有允许、限制或禁止结论及独立验证方法。
+- 既有路线每条参考能力都有允许、限制或禁止结论及独立验证方法；新增任务 010/011 的候选来源明确标为待增量审计，未被当前验收授权。
 
 ## 11. 验证记录
 

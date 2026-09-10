@@ -54,6 +54,13 @@ enum class node_state {
     removed,
 };
 
+enum class hash58_signature_status {
+    not_applicable,
+    not_checked,
+    valid,
+    invalid,
+};
+
 struct record_node {
     std::array<char, 4> marker{};
     std::uint32_t header_size{};
@@ -79,6 +86,7 @@ struct database_document {
     std::vector<std::string> requested_changes;
     bool modified{};
     bool has_opaque_dependency{};
+    hash58_signature_status hash58_status{hash58_signature_status::not_applicable};
 };
 
 }  // namespace foopodbridge::core::database

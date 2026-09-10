@@ -1,10 +1,10 @@
 # 004-实现 6G/hash58 与 Nano 4 格式核心
 
-- 状态：规格核对中
+- 状态：已验收
 - 日期：2026-09-09
 - 前置任务：[`003-实现传统 iTunesDB 共同往返核心`](../003-实现iPodPhoto数据库往返核心/README.md) 已验收
 - 对应路线：[`../TODO.md`](../TODO.md) 的任务 004
-- 当前授权：允许整理规格、读取 Git 忽略的电脑端私有 fixture、核对已审计来源并做只读分析；开始 C++ 实现和构建前仍需明确批准本任务规格
+- 当前授权：用户已于 2026-09-10 批准规格、C++ 实现、构建和电脑侧测试，并于同日确认任务 004 通过；设备写入、部署与候选包发布仍未授权
 - 长期蓝图：[`../../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md`](../../docs/IPOD_MANAGER_IMPLEMENTATION_BLUEPRINT.md) 的 `BP-DB-*`、`BP-INIT-003`、`BP-FMT-001/003`
 - 来源边界：[`../../docs/REFERENCE_PROVENANCE.md`](../../docs/REFERENCE_PROVENANCE.md) 的 `LG-H58-01`、`LG-DEV-01`、`FD-CRYPT-01`
 - Nano 4 私有证据：[`../../docs/device-evidence/NANO4_20260908_BASELINE.md`](../../docs/device-evidence/NANO4_20260908_BASELINE.md)、[`../../docs/device-evidence/NANO4_20260909_RESTORED_CLEAN_WINDOWS.md`](../../docs/device-evidence/NANO4_20260909_RESTORED_CLEAN_WINDOWS.md)
@@ -29,8 +29,9 @@
 
 ## 固定边界
 
-- 仅覆盖传统 6G/hash58 家族候选：Classic、Nano 3、Nano 4；不同型号仍保留各自证据等级。
-- Nano 5、iTunesCDB、SQLite、hash72、CBK 和 iOS 明确排除。
+- 本任务仅覆盖传统 6G/hash58 profile：Classic、Nano 3、Nano 4 是当前来源支持的候选映射，不同型号仍保留各自证据等级。
+- Nano 5、iTunesCDB、SQLite、hash72、CBK 和 iOS 不进入任务 004；其中 Nano 5+ 非 touch 仍属于产品强制目标，由任务 011 的独立 profile 和增量来源审计处理，iOS/iPod touch 继续排除。
+- Nano 4 fixture 与稳定设备 ID 只验证 `TraditionalHash58` 算法、记录版本和签名输入，生产代码不得用设备名称、私有字节或该 ID 选择通用 Writer。
 - 不加载或分发 `iTunesCrypt.dll`，不采用旧 x86 二进制。
 - hash58 允许修改采用固定 libgpod 文件，保留 BSD-3-Clause 版权与免责声明；6G 数据库部分继续原创实现。
 - 完整 FireWire GUID/稳定设备 ID 不进入 Git、文档、测试名、日志或错误；公开材料只能显示是否存在和遮蔽摘要。
@@ -43,6 +44,8 @@
 - 当前 `SysInfo` 为空且没有 `SysInfoExtended`，仓库尚未持有可供任务 004 验证的稳定 16 十六进制字符 FireWire GUID。
 - hash58 算法、公开向量和错误输入测试可以先完成；要把 Nano 4 私有 fixture 与正确设备密钥做最终交叉验证时，可能需要用户把 Nano 4 接入一次。届时 Codex 只做明确说明的只读身份采集，不写设备。
 
+2026-09-10 实现前复核纠正了两项技术合同：hash58 规范化还必须临时清零 database ID 与 `0x32` 预哈希块并强制 scheme `1`，不能只清零 `0x58`；Nano 4 私有 fixture 的五个 dataset 中，type `4/1/3/2` 是固定历史 Writer 证明的 6G 基础结构，type `5` 只在 special playlists 有效时出现，公开空库不能从私有 fixture 伪造模板。修订已写入 [`SPEC.md`](SPEC.md)。用户已于 2026-09-10 明确批准该规格，当前进入 C++ 实现；批准不包含设备访问、设备写入、部署或候选包发布。
+
 ## 计划交付
 
 - `TraditionalHash58` 格式 profile 与设备密钥值对象；
@@ -53,6 +56,8 @@
 - 正确签名的电脑侧空 Library 产物及独立 Reader/Validator/hash verifier 再读；
 - Debug/Release 全量 CTest，不部署组件、不生成用户候选包。
 
+实现和脱敏结构比较记录见 [`REPORT.md`](REPORT.md)。
+
 ## 下一检查点
 
-先把上述边界收敛成实现级 [`SPEC.md`](SPEC.md)。规格会用“输入是什么、成功证明什么、失败如何拒绝”的方式表达；用户不需要检查算法代码，只需确认：私有 ID 不外泄、本任务不写设备、同家族不等于所有型号都已验证。
+实现、公开向量、两份 Nano 4 私有签名交叉验证、全非 touch 范围复评和 Debug/Release 全量回归均已完成，结果见 [`REPORT.md`](REPORT.md)。用户于 2026-09-10 明确确认任务 004 通过；下一任务是 [`005-实现全目标家族注册表与Windows自动发现只读服务`](../005-实现全目标家族注册表与Windows自动发现只读服务/README.md)。设备仍未获得任何写入授权。
