@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 project(FooPodBridge VERSION 0.1.0 LANGUAGES CXX RC)
 
-set(FOOPODBRIDGE_DISPLAY_VERSION "0.1.0-beta.1")
+set(FOOPODBRIDGE_DISPLAY_VERSION "0.1.0-beta.2")
 
 if(NOT WIN32)
   message(FATAL_ERROR "FooPodBridge currently supports Windows only.")
@@ -32,7 +32,7 @@ target_compile_options(foopodbridge_core PRIVATE /W4 /WX /permissive- /Zc:__cplu
 
 # These interface targets are permanent dependency boundaries. Later tasks add
 # real implementations without changing the allowed Core dependency direction.
-foreach(core_module IN ITEMS device media transaction)
+foreach(core_module IN ITEMS media transaction)
   add_library(foopodbridge_core_${core_module} INTERFACE)
   target_link_libraries(foopodbridge_core_${core_module} INTERFACE foopodbridge_core)
   target_include_directories(foopodbridge_core_${core_module} INTERFACE include)
@@ -50,6 +50,15 @@ target_link_libraries(foopodbridge_core_database PUBLIC foopodbridge_core)
 target_include_directories(foopodbridge_core_database PUBLIC include)
 target_compile_options(foopodbridge_core_database PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
 
+add_library(foopodbridge_core_device STATIC
+  src/core/device/device.cpp
+  src/core/device/windows_backend.cpp
+)
+target_link_libraries(foopodbridge_core_device PUBLIC foopodbridge_core_database PRIVATE setupapi cfgmgr32 uuid)
+target_include_directories(foopodbridge_core_device PUBLIC include)
+target_compile_definitions(foopodbridge_core_device PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN _WIN32_WINNT=0x0A00)
+target_compile_options(foopodbridge_core_device PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
+
 add_library(foopodbridge_contract STATIC
   src/contract/service_guids.cpp
 )
@@ -62,6 +71,8 @@ target_compile_options(foopodbridge_contract PRIVATE /W4 /WX /permissive- /Zc:__
 
 add_library(foo_pod_bridge MODULE
   src/foobar/component.cpp
+  src/foobar/device_service.cpp
+  src/foobar/device_preferences.cpp
   src/foobar/foo_pod_bridge.rc
 )
 set_target_properties(foo_pod_bridge PROPERTIES
@@ -76,10 +87,11 @@ target_compile_definitions(foo_pod_bridge PRIVATE
   WIN32_LEAN_AND_MEAN
   NOMINMAX
 )
-target_compile_options(foo_pod_bridge PRIVATE /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /external:W0)
+target_compile_options(foo_pod_bridge PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8 /external:W0)
 target_link_options(foo_pod_bridge PRIVATE /INCREMENTAL:NO)
 target_link_libraries(foo_pod_bridge PRIVATE
   foopodbridge_core
+  foopodbridge_core_device
   foopodbridge_contract
   foopodbridge_foobar2000_sdk
   foopodbridge_component_client
@@ -93,6 +105,16 @@ target_link_libraries(foo_pod_bridge PRIVATE
 )
 
 if(BUILD_TESTING)
+  add_executable(foopodbridge_device_tests tests/device_tests.cpp)
+  target_link_libraries(foopodbridge_device_tests PRIVATE foopodbridge_core_device)
+  target_compile_options(foopodbridge_device_tests PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
+  add_test(NAME device_discovery COMMAND foopodbridge_device_tests)
+  add_executable(foopodbridge_device_windows_reader_tests tests/device_windows_reader_tests.cpp)
+  target_include_directories(foopodbridge_device_windows_reader_tests PRIVATE src)
+  target_link_libraries(foopodbridge_device_windows_reader_tests PRIVATE foopodbridge_core_device)
+  target_compile_definitions(foopodbridge_device_windows_reader_tests PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+  target_compile_options(foopodbridge_device_windows_reader_tests PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
+  add_test(NAME device_windows_reader COMMAND foopodbridge_device_windows_reader_tests)
   add_executable(foopodbridge_core_version_tests tests/core_version_tests.cpp)
   target_link_libraries(foopodbridge_core_version_tests PRIVATE foopodbridge_core)
   target_compile_options(foopodbridge_core_version_tests PRIVATE /W4 /WX /permissive- /Zc:__cplusplus /utf-8)

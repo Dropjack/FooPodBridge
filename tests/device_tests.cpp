@@ -1,0 +1,176 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#include "database_test_support.h"
+#include "foopodbridge/core/device/device.h"
+#include "foopodbridge/core/database/hash58.h"
+#include "foopodbridge/core/database/reader.h"
+#include <algorithm>
+#include <chrono>
+#include <cstdio>
+#include <iostream>
+#include <set>
+
+using namespace foopodbridge::core;
+using namespace foopodbridge::core::device;
+using foopodbridge::tests::require;
+
+namespace {
+candidate normal() {
+    candidate c;
+    c.physical_key = "synthetic-device";
+    c.volume_key = "synthetic-volume";
+    c.hardware_id = "USB\\VID_05AC&PID_1209\\TEST";
+    c.identity_complete = true;
+    return c;
+}
+struct simulated_backend : read_backend {
+    std::mutex mutex;
+    std::condition_variable condition;
+    std::function<void()> callback;
+    bool block{}, entered{}, present{true};
+    std::vector<candidate> devices{normal()};
+    std::vector<candidate> enumerate(std::stop_token) override { std::lock_guard lock(mutex); return devices; }
+    file_result read_database(const candidate&, std::stop_token cancel) override {
+        std::unique_lock lock(mutex);
+        entered = true;
+        condition.notify_all();
+        std::stop_callback wake(cancel, [&] { condition.notify_all(); });
+        condition.wait(lock, [&] { return !block || cancel.stop_requested(); });
+        if (cancel.stop_requested()) return {{}, reason::cancelled};
+        return {foopodbridge::tests::make_empty().original_bytes};
+    }
+    bool still_present(const candidate&) override { std::lock_guard lock(mutex); return present; }
+    void watch(std::function<void()> cb) override { callback = std::move(cb); }
+    void unwatch() noexcept override { callback = {}; }
+};
+void wait_ready(discovery& d) {
+    for (int i = 0; i < 200; ++i) {
+        if (!d.current().scanning) return;
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    throw std::runtime_error("discovery timeout");
+}
+}
+int main() {
+    try {
+        require(registry().size() == 23, "target generations missing");
+        std::set<std::string_view> ids;
+        for (const auto& e : registry()) require(ids.insert(e.id).second && !e.source.empty(), "registry evidence/IDs invalid");
+        require(!identify("USB\\VID_05AC&PID_1291\\X").positive, "touch incorrectly accepted");
+        require(!identify("USB\\VID_05AC&PID_12FF\\X").positive, "USB prefix accepted");
+        require(!identify("USB\\VID_1111&PID_1263\\X").positive, "non-Apple accepted");
+        require(identify("1394\\Apple_Computer__Inc.&iPod&REV_0001\\X").positive, "FireWire omitted");
+        require(identify("USB\\VID_05AC&PID_1263\\X").model_id == "nano4", "Nano route incorrect");
+        require(identify("USB\\VID_05AC&PID_1261\\X", "9ZU").model_id == "classic2009", "Classic evidence ignored");
+        for (const auto& entry : registry()) {
+            if (entry.usb_product == 0) continue;
+            char hardware[64]{};
+            std::snprintf(hardware, sizeof(hardware), "USB\\VID_05AC&PID_%04X\\PUBLIC", entry.usb_product);
+            require(identify(hardware).positive && identify(hardware).group == entry.group, "registered family unreachable");
+        }
+        for (const auto& path : {":iPod_Control:Music:F00:ABC.mp3", "iPod_Control/Music/F00/ABC.mp3"})
+            require(safe_relative_path(path).has_value(), "valid path refused");
+        for (const auto& path : {"../secret", "C:\\secret", ":iPod_Control:Music:..:secret", "//host/share", ":iPod_Control:Music:F00:file.mp3:stream", "iPod_Control/Music/CON", "iPod_Control/Music/file. "})
+            require(!safe_relative_path(path), "unsafe path accepted");
+        auto c = normal();
+        file_result f{foopodbridge::tests::make_empty().original_bytes};
+        require(inspect(c, f).status == state::ready_read_only, "valid empty library not readable");
+        c.mounted = false;
+        require(inspect(c, f).status == state::not_mounted, "unmounted state wrong");
+        c = normal(); c.mapping_valid = false;
+        require(inspect(c, f).status == state::unidentified, "mapping conflict ignored");
+        c = normal(); c.filesystem_supported = false;
+        require(inspect(c, f).status == state::unsupported_filesystem, "filesystem ignored");
+        c = normal(); c.recovery_verified = true;
+        require(inspect(c, f).status == state::recovery_required, "recovery state ignored");
+        c = normal();
+        require(inspect(c, {{}, reason::database_missing}).status == state::format_pending, "missing DB became writable empty");
+        require(inspect(c, {}).status == state::database_corrupt, "zero byte DB accepted");
+        require(inspect(c, {{}, reason::access_denied}).status == state::read_error, "access failure called corrupt");
+        for (const auto problem : {reason::sharing_violation, reason::io_failure, reason::removed, reason::content_changed, reason::resource_limit, reason::unsafe_path, reason::cancelled})
+            require(inspect(c, {{}, problem}).status == state::read_error && inspect(c, {{}, problem}).problem == problem, "read error lost its reason");
+        auto corrupt = f; corrupt.bytes.resize(28);
+        require(inspect(c, corrupt).status == state::database_corrupt, "truncated DB accepted");
+        auto unknown_version = f; unknown_version.bytes[16] = std::byte{0xff};
+        require(inspect(c, unknown_version).status == state::format_pending, "unknown version called corrupted");
+        for (const auto* id : {"USB\\VID_05AC&PID_1265\\X", "USB\\VID_05AC&PID_1300\\X"}) {
+            c.hardware_id = id;
+            require(inspect(c, f).status == state::format_pending, "independent format falsely read");
+        }
+        c = normal(); c.hardware_id = "USB\\VID_05AC&PID_1263\\X";
+        auto key = database::parse_hash58_device_key("0011223344556677");
+        const auto signed_doc = database::writer{}.create_empty("Library", database::traditional_hash58_profile(), key.value(), foopodbridge::tests::fixed_generation());
+        require(signed_doc.has_value(), "signed fixture failed");
+        file_result sf{signed_doc.value().original_bytes};
+        require(inspect(c, sf).signature == database::hash58_signature_status::not_checked, "missing key reported verified");
+        c.signing_identity = "0011223344556677";
+        require(inspect(c, sf).signature == database::hash58_signature_status::valid, "signature not verified");
+        c.signing_identity = "0011223344556678";
+        require(inspect(c, sf).status == state::database_corrupt, "wrong key accepted");
+        c.signing_identity.clear();
+        c = normal();
+        auto projection_profile = database::traditional_unsigned_profile();
+        projection_profile.track_header_size = 584;
+        database::edit_plan add;
+        add.operations.push_back(database::add_track{":iPod_Control:Music:F00:PUBLIC.mp3", "Public title", "Public artist", "Public album"});
+        add.operations.push_back(database::add_ordinary_playlist{"Public list"});
+        const auto edited = database::editor{}.apply(foopodbridge::tests::make_empty(), add, foopodbridge::tests::fixed_generation());
+        require(edited.has_value(), "projection fixture edit failed");
+        const auto written = database::writer{}.write(edited.value(), projection_profile, foopodbridge::tests::fixed_generation());
+        require(written.has_value(), "projection fixture write failed");
+        auto projection = inspect(c, {written.value()});
+        require(projection.status == state::ready_read_only && projection.tracks.size() == 1 && projection.playlists.size() == 1, "Library projection lost items");
+        require(projection.tracks[0].metadata.title == "Public title" && projection.tracks[0].relative_path == "iPod_Control/Music/F00/PUBLIC.mp3", "projection changed metadata/path");
+        auto media_bytes = written.value();
+        const auto document = database::reader{}.read(media_bytes, database::traditional_preserve_only_profile());
+        std::size_t track_offset{};
+        const auto find_track = [&](auto&& self, const database::record_node& node) -> void {
+            if (node.marker == std::array<char, 4>{'m','h','i','t'}) track_offset = static_cast<std::size_t>(node.offset);
+            for (const auto& child : node.children) self(self, child);
+        };
+        find_track(find_track, document.value().root);
+        require(track_offset != 0, "projection fixture has no track record");
+        for (const auto [raw, expected] : {std::pair{1U, media_kind::music}, {8U, media_kind::audiobook}, {5U, media_kind::other}, {0U, media_kind::unknown}}) {
+            for (unsigned byte = 0; byte < 4; ++byte) media_bytes[track_offset + 208 + byte] = static_cast<std::byte>((raw >> (byte * 8)) & 0xffU);
+            const auto view = inspect(c, {media_bytes});
+            require(view.status == state::ready_read_only && view.tracks[0].kind == expected, "media kind was guessed or misclassified");
+        }
+
+        auto backend = std::make_unique<simulated_backend>();
+        auto* simulation = backend.get();
+        discovery d(std::move(backend));
+        d.start([] {}); wait_ready(d);
+        auto old = d.current().devices.at(0);
+        require(d.is_current(old->token, old->generation, old->revision), "fresh snapshot invalid");
+        d.refresh();
+        require(!d.is_current(old->token, old->generation, old->revision), "refresh leaves old revision current");
+        wait_ready(d);
+        {
+            std::lock_guard lock(simulation->mutex);
+            simulation->block = true; simulation->entered = false;
+        }
+        d.refresh();
+        {
+            std::unique_lock lock(simulation->mutex);
+            require(simulation->condition.wait_for(lock, std::chrono::seconds(2), [&] { return simulation->entered; }), "blocked read not entered");
+            simulation->devices.clear();
+        }
+        simulation->callback();
+        require(d.current().devices.empty(), "removal failed to invalidate promptly");
+        wait_ready(d);
+        require(d.current().devices.empty(), "late read resurrected removed device");
+        {
+            std::lock_guard lock(simulation->mutex);
+            simulation->block = false;
+            auto second = normal(); second.physical_key = "another-device"; second.volume_key = "same-reused-volume";
+            simulation->devices = {normal(), second, normal()};
+        }
+        simulation->callback(); wait_ready(d);
+        require(d.current().devices.size() == 2, "duplicate notifications or same-name devices conflated");
+        require(d.current().devices[0]->generation != old->generation, "remount reused generation");
+        require(d.current().devices[0]->token != d.current().devices[1]->token, "same-name devices share token");
+        d.stop();
+        require(d.current().stopped && d.current().devices.empty(), "shutdown retained live device");
+        std::cout << "Device registry, classification, paths, signatures and lifecycle passed.\n";
+        return 0;
+    } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }
+}

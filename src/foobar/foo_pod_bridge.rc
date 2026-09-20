@@ -1,4 +1,17 @@
 #include <windows.h>
+#include "resource.h"
+
+IDD_DEVICE_INFO DIALOGEX 0, 0, 332, 245
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "Devices - read-only", -1, 7, 7, 250, 12
+    COMBOBOX IDC_DEVICE_LIST, 7, 23, 252, 100, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON "Refresh", IDC_DEVICE_REFRESH, 266, 23, 58, 15
+    LTEXT "Starting device service...", IDC_PROVIDER_STATUS, 7, 43, 317, 22
+    EDITTEXT IDC_DEVICE_DETAILS, 7, 68, 317, 169, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP
+END
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 0,1,0,0
@@ -24,7 +37,7 @@ BEGIN
             VALUE "LegalCopyright", "Copyright (c) 2026 FooPodBridge contributors\0"
             VALUE "OriginalFilename", "foo_pod_bridge.dll\0"
             VALUE "ProductName", "FooPodBridge\0"
-            VALUE "ProductVersion", "0.1.0-beta.1\0"
+            VALUE "ProductVersion", "0.1.0-beta.2\0"
         END
     END
     BLOCK "VarFileInfo"

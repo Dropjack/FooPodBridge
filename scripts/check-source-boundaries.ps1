@@ -36,10 +36,11 @@ foreach ($file in Get-ChildItem -LiteralPath (Join-Path $root 'src') -Recurse -F
     }
 }
 
-$contractPath = Join-Path $root 'include\foopodbridge\service_v1.h'
-$contractText = $strictUtf8.GetString([System.IO.File]::ReadAllBytes($contractPath))
-if ($contractText -match $contractForbidden) {
-    $failures.Add("Public contract exposes an STL ownership/container type: $contractPath")
+foreach ($contractPath in @((Join-Path $root 'include\foopodbridge\service_v1.h'), (Join-Path $root 'include\foopodbridge\service_readonly.h'))) {
+    $contractText = $strictUtf8.GetString([System.IO.File]::ReadAllBytes($contractPath))
+    if ($contractText -match $contractForbidden) {
+        $failures.Add("Public contract exposes an STL ownership/container type: $contractPath")
+    }
 }
 
 if ($failures.Count -gt 0) {

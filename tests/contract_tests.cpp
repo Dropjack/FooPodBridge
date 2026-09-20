@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: 0BSD
-#include "foopodbridge/service_v1.h"
+#include "foopodbridge/service_readonly.h"
 
 #include <array>
 #include <type_traits>
@@ -20,6 +20,9 @@ bool all_guids_are_unique() {
         foopodbridge::contract::operation_result_v1::class_guid,
         foopodbridge::contract::device_event_callback_v1::class_guid,
         foopodbridge::contract::subscription_v1::class_guid,
+        foopodbridge::contract::library_snapshot_v1::class_guid,
+        foopodbridge::contract::device_snapshot_readonly_v1::class_guid,
+        foopodbridge::contract::device_provider_readonly_v1::class_guid,
     };
 
     for (std::size_t left = 0; left < guids.size(); ++left) {
@@ -38,6 +41,9 @@ int main() {
 
     static_assert(abi_major_v1 == 1);
     static_assert(abi_minor_v1 == 0);
+    static_assert(readonly_contract_minor == 1);
+    static_assert(std::is_base_of_v<device_provider_v1, device_provider_readonly_v1>);
+    static_assert(std::is_base_of_v<device_snapshot_v1, device_snapshot_readonly_v1>);
     static_assert(std::is_abstract_v<service_v1>);
     static_assert(std::is_base_of_v<service_base, service_v1>);
     static_assert(std::is_abstract_v<device_provider_v1>);

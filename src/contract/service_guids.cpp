@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: 0BSD
-#include "foopodbridge/service_v1.h"
+#include "foopodbridge/service_readonly.h"
 
 // Match the SDK's guids.cpp pattern: strong definitions are required here so
 // this GUID-only object is extracted when the contract is linked as a static library.
@@ -39,3 +39,10 @@ DECLARE_CLASS_GUID(
 DECLARE_CLASS_GUID(
     foopodbridge::contract::subscription_v1,
     0xda355d47, 0x25ae, 0x4c6f, 0x9e, 0xf2, 0xc9, 0xc1, 0x6a, 0x0e, 0x34, 0x6c)
+
+DECLARE_CLASS_GUID(foopodbridge::contract::library_snapshot_v1,
+    0x4a53ea59, 0xb1c3, 0x4304, 0x9b, 0x4c, 0x65, 0xe2, 0x75, 0x29, 0x84, 0x5c)
+DECLARE_CLASS_GUID(foopodbridge::contract::device_snapshot_readonly_v1,
+    0x7706da65, 0xea83, 0x4237, 0x83, 0x98, 0x13, 0x3f, 0x9d, 0xa4, 0x6b, 0xf7)
+DECLARE_CLASS_GUID(foopodbridge::contract::device_provider_readonly_v1,
+    0xc7845165, 0x3315, 0x4597, 0xbc, 0x23, 0x48, 0x69, 0x1d, 0x58, 0xb0, 0x72)

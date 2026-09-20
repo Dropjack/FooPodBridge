@@ -9,6 +9,7 @@
 #include "foopodbridge/core/version.h"
 #include "foopodbridge/service_v1.h"
 #include "foobar/component_identity.h"
+#include "foobar/device_service.h"
 
 DECLARE_COMPONENT_VERSION(
     foopodbridge::identity::component_name,
@@ -26,7 +27,7 @@ public:
     }
 
     std::uint32_t get_contract_minor() noexcept override {
-        return foopodbridge::contract::abi_minor_v1;
+        return foopodbridge::contract::readonly_contract_minor;
     }
 
     void get_component_version(pfc::string_base& out) override {
@@ -36,13 +37,13 @@ public:
     foopodbridge::contract::runtime_state get_runtime_state() noexcept override {
         const auto core_version = foopodbridge::core::current_version();
         PFC_ASSERT(core_version.major == 0 && core_version.minor == 1);
-        return foopodbridge::contract::runtime_state::ready_no_device_provider;
+        return foopodbridge::adapter::running() ? foopodbridge::contract::runtime_state::ready : foopodbridge::contract::runtime_state::shutting_down;
     }
 
     bool get_device_provider(
         service_ptr_t<foopodbridge::contract::device_provider_v1>& out) noexcept override {
-        out.release();
-        return false;
+        try { out = foopodbridge::adapter::provider(); return true; }
+        catch (...) { out.release(); return false; }
     }
 };
 

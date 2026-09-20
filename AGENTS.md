@@ -30,12 +30,22 @@ Before inspecting, inferring from, or modifying this repository:
 - `D:\dev\foo\FooCrate` is a separate repository and the integration/test workspace. Protect its existing changes and follow its own `AGENTS.md` before touching it.
 - Never access, install into, launch, or modify the user's daily foobar2000 installation on drive C:.
 
+# User-operated application testing
+
+- Computer Use is prohibited. Do not invoke the computer-use skill, sky, cua, or other desktop/browser UI-control tools for this project.
+- Do not substitute shell scripts, accessibility APIs, simulated input, automated screenshots, or another automation method for prohibited UI control.
+- All tests of application usage, component loading, UI behavior, and interactive device workflows are performed by the user. Do not launch or operate applications to perform these checks.
+- Provide concise Chinese instructions with the exact test instance, entry point, action, expected result, and feedback needed. Guide one check at a time and wait for the user's result before the next dependent check.
+- Code inspection, command-line builds, non-interactive unit/fixture tests, and package audits remain allowed within the approved task. They do not replace user-operated application verification.
+- Record unperformed manual checks as pending. Never claim UI or usage verification based only on compilation or automated tests.
+- This restriction overrides earlier task text authorizing automated application/UI checks, including foobar-dev smoke tests.
+
 # Local foobar2000 test instances
 
-- Codex/AI development deployment, automation, diagnostics, and smoke tests may use only `D:\dev\foo\FooCrate\.local\foobar-dev`.
+- Authorized development deployment and non-interactive diagnostics may use only `D:\dev\foo\FooCrate\.local\foobar-dev`. Application loading and usage checks are user-operated under the rule above.
 - User acceptance, clean install, upgrade, rollback, and multi-scenario testing use only `D:\dev\foo\FooCrate\.local\foobar-test`.
 - Do not create a third foobar2000 installation under FooPodBridge.
-- A task must explicitly authorize real iPod writes. UI automation, discovery tests, or read-only tests never imply permission to modify an attached device.
+- A task must explicitly authorize real iPod writes. Discovery tests or read-only tests never imply permission to modify an attached device.
 
 # Local build tools
 
