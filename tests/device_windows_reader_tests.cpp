@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "database_test_support.h"
 #include "core/device/windows_reader.h"
+#include "core/device/windows_identity.h"
 #include <windows.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <array>
+#include <set>
 
 int main() {
     using namespace foopodbridge::core::device;
@@ -13,6 +16,22 @@ int main() {
     // Never use attached volumes; only a newly created process-specific temp directory.
     const auto dir = fs::temp_directory_path() / (L"foopodbridge-reader-" + std::to_wstring(GetCurrentProcessId()) + L"-" + std::to_wstring(GetTickCount64()));
     try {
+        // Synthetic PnP tree: disk and USB nodes are one physical iPod, even
+        // when Windows returns differently cased IDs. A second iPod stays separate.
+        const std::array<std::wstring, 5> ids{L"ROOT", L"USB\\vid_05ac&pid_1209\\fake-a",
+            L"USBSTOR\\DISK&VEN_APPLE&PROD_IPOD\\fake-a", L"USB\\VID_05AC&PID_1209\\FAKE-B",
+            L"1394\\apple_computer__inc.&ipod\\fake-c"};
+        const std::array<int, 5> parents{-1, 0, 1, 0, 0};
+        auto key = [&](int node) { return detail::physical_ancestor(node,
+            [&](int n) { return ids.at(n); }, [&](int n, int& parent) { parent = parents.at(n); return parent >= 0; }); };
+        require(key(2) == key(1) && key(1) == L"USB\\VID_05AC&PID_1209\\FAKE-A", "disk/USB identity split");
+        std::set<std::wstring> mounted{key(2)};
+        require(mounted.contains(key(1)), "mounted USB node would appear as NotMounted");
+        require(!mounted.contains(key(3)), "different physical devices merged");
+        require(key(0).empty(), "unrelated root identified as iPod");
+        require(key(4) == L"1394\\APPLE_COMPUTER__INC.&IPOD\\FAKE-C", "FireWire identity lost");
+        require(detail::physical_ancestor(0, [](int) { return std::wstring(L"ROOT"); },
+            [](int n, int& p) { p = n; return true; }).empty(), "cyclic ancestry not bounded");
         require(fs::create_directory(dir), "temporary directory collision");
         fs::create_directories(dir / "iPod_Control" / "iTunes");
         const auto root = dir.wstring() + L"\\";

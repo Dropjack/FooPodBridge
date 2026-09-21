@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<title>FooCrate Devices 只读工作区布局草案</title>
+<desc>左侧设备树，中央曲目表，右下中键切换设备页，右上播放信息保持原行为；不是实际运行截图。数量取自用户截图，未虚构曲名。</desc>
+<style>text{font-family:'Segoe UI','Microsoft YaHei',sans-serif;fill:#29434c;font-size:14px}.muted{fill:#617781}.small{font-size:12px}.heading{font-size:18px;font-weight:600}.label{font-weight:600}.line{stroke:#c8d7db;stroke-width:1}</style>
+<rect width="1200" height="700" fill="#edf4f7"/>
+<rect width="1200" height="54" fill="#253e47"/>
+<text x="24" y="33" style="fill:white;font-size:19px">FooCrate · Devices</text>
+<text x="738" y="32" style="fill:#dce8ed">设计草案 · 非运行截图 · 只读浏览方案</text>
+<path d="M225 54V646M940 54V646M0 646H1200" class="line"/>
+<text x="20" y="86" class="heading">Playlists</text>
+<text x="30" y="119">Library (full)</text><text x="30" y="151">Played often</text><text x="30" y="183">Recently added</text>
+<text x="20" y="266" class="small muted">原有播放列表保持独立</text>
+<path d="M0 291H225" class="line"/>
+<text x="20" y="325" class="heading">Devices</text>
+<text x="20" y="361">⌄ iPod Classic</text>
+<text x="37" y="385" class="small muted"></text>
+<rect x="8" y="402" width="209" height="34" rx="3" fill="#d1e5eb"/>
+<text x="40" y="424" class="label">Library</text><text x="166" y="424">1862</text>
+<text x="40" y="464">⌄ Playlists</text>
+<text x="56" y="494" class="small muted">各列表名称与歌曲总数</text>
+<text x="20" y="586" class="small muted">实际名称由服务提供</text>
+<text x="20" y="609" class="small muted">Refresh 位于设备右键菜单</text>
+<text x="249" y="87" class="label">Title</text><text x="523" y="87" class="label">Artist</text><text x="687" y="87" class="label">Album</text>
+<path d="M240 102H925" class="line"/>
+<path d="M240 210H925M240 249H925M240 288H925M240 327H925M240 366H925M240 405H925M240 444H925M240 483H925" class="line"/>
+<rect x="300" y="271" width="570" height="126" rx="5" fill="#edf4f7" stroke="#c8d7db"/>
+<text x="326" y="304" class="heading">这里显示设备实际曲目</text>
+<text x="326" y="334" class="muted">草案未取得曲名，因此不填充虚构歌曲。</text>
+<text x="326" y="363" class="muted">选择 playlist 后，按设备保存的成员顺序浏览。</text>
+<text x="250" y="557" class="small muted">顶部沿用普通列表；有声读物通过已有智能播放列表浏览。</text>
+<text x="250" y="584" class="small muted">当前合同没有安全播放解析接口，首轮浏览不触发设备曲目播放。</text>
+<text x="962" y="89" class="heading">Now playing</text>
+<rect x="988" y="112" width="166" height="150" rx="3" fill="#e1e9e8" stroke="#c8d7db"/>
+<text x="1018" y="191" class="muted">当前歌曲封面</text>
+<text x="962" y="291" class="muted">原有歌曲信息与播放行为</text>
+<text x="962" y="316" class="small muted">不随设备浏览切换</text>
+<path d="M958 342H1182" class="line"/>
+<text x="962" y="416" class="heading">Device overview</text>
+<text x="962" y="446">Read-only</text>
+<text x="962" y="475" class="muted">119.00 GiB capacity</text>
+<text x="962" y="500" class="muted">94.67 GiB free</text>
+<rect x="962" y="518" width="216" height="7" rx="3" fill="#d7e3e7"/>
+<rect x="962" y="518" width="44" height="7" rx="3" fill="#68939e"/>
+<text x="962" y="558" class="small muted">仅浏览 iPod 时提供 Device 页</text>
+<text x="962" y="581" class="small muted">示意：用户中键切换后的状态</text>
+<text x="962" y="605" class="small muted">默认不抢走歌词，离开后隐藏</text>
+<text x="24" y="678" class="muted">现有播放控制栏保持原行为；浏览设备不会切换当前播放。</text>
+</svg>

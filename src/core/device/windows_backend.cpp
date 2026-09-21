@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 #include "foopodbridge/core/device/device.h"
 #include "windows_reader.h"
+#include "windows_identity.h"
 #include <windows.h>
 #include <setupapi.h>
 #include <cfgmgr32.h>
@@ -51,15 +52,9 @@ std::wstring node_id(DEVINST node) {
     return id.data();
 }
 std::string apple_ancestor(DEVINST node) {
-    for (unsigned depth = 0; depth < 16; ++depth) {
-        auto id = node_id(node);
-        for (auto& ch : id) if (ch >= L'a' && ch <= L'z') ch -= L'a' - L'A';
-        if (id.starts_with(L"USB\\VID_05AC&PID_") || id.starts_with(L"1394\\APPLE_COMPUTER__INC.&IPOD")) return utf8(id);
-        DEVINST parent{};
-        if (CM_Get_Parent(&parent, node, 0) != CR_SUCCESS) break;
-        node = parent;
-    }
-    return {};
+    return utf8(detail::physical_ancestor(node, node_id, [](DEVINST child, DEVINST& parent) {
+        return CM_Get_Parent(&parent, child, 0) == CR_SUCCESS;
+    }));
 }
 reason last_reason(DWORD e) {
     switch (e) {
@@ -282,7 +277,7 @@ public:
                 break;
             }
             if (cancel.stop_requested()) return {};
-            const auto id = utf8(node_id(info.DevInst));
+            const auto id = apple_ancestor(info.DevInst);
             if (identify(id).positive && !mounted.contains(id)) {
                 candidate c; c.hardware_id = id; c.physical_key = id; c.mounted = false;
                 result.push_back(std::move(c)); mounted.insert(id);

@@ -4,6 +4,7 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 
 namespace {
 namespace c = foopodbridge::contract;
@@ -56,9 +57,14 @@ private:
     }
     INT_PTR message(HWND hwnd, UINT msg, WPARAM wp) {
         if (msg == WM_INITDIALOG) {
+            RECT host{};
+            GetClientRect(GetParent(hwnd), &host);
+            SetWindowPos(hwnd, nullptr, 0, 0, host.right, host.bottom, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+            layout(hwnd);
             provider_->subscribe(new service_impl_t<page_callback>(lifetime_), subscription_);
             refresh_view(); return TRUE;
         }
+        if (msg == WM_SIZE) { layout(hwnd); return TRUE; }
         if (msg == WM_NCDESTROY) {
             if (subscription_.is_valid()) subscription_->cancel();
             lifetime_->hwnd = nullptr; SetWindowLongPtrW(hwnd, DWLP_USER, 0); return FALSE;
@@ -71,6 +77,20 @@ private:
             if (LOWORD(wp) == IDC_DEVICE_LIST && HIWORD(wp) == CBN_SELCHANGE) { details(); return TRUE; }
         }
         return FALSE;
+    }
+    void layout(HWND hwnd) {
+        RECT client{}; GetClientRect(hwnd, &client);
+        RECT units{7, 23, 58, 15}; MapDialogRect(hwnd, &units);
+        const int margin = units.left, top = units.top, button = units.right, height = units.bottom;
+        const int width = std::max(0, static_cast<int>(client.right) - 2 * margin);
+        const int button_width = std::min(button, width);
+        const int list_width = std::max(0, width - button_width - margin);
+        RECT rows{0, 43, 100, 68}; MapDialogRect(hwnd, &rows);
+        MoveWindow(GetDlgItem(hwnd, IDC_DEVICE_LIST), margin, top, list_width, rows.right, TRUE);
+        MoveWindow(GetDlgItem(hwnd, IDC_DEVICE_REFRESH), margin + width - button_width, top, button_width, height, TRUE);
+        MoveWindow(GetDlgItem(hwnd, IDC_PROVIDER_STATUS), margin, rows.top, width, rows.bottom - rows.top - margin, TRUE);
+        MoveWindow(GetDlgItem(hwnd, IDC_DEVICE_DETAILS), margin, rows.bottom, width,
+            std::max(0, static_cast<int>(client.bottom - rows.bottom) - margin), TRUE);
     }
     void refresh_view() {
         const auto hwnd = lifetime_->hwnd;

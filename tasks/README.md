@@ -12,11 +12,11 @@
 
 ## 当前进度
 
-- 当前任务：[`005-实现全目标家族注册表、Windows 自动发现与只读服务`](005-实现全目标家族注册表与Windows自动发现只读服务/README.md)
-- 状态：实现中
+- 当前任务：[`006-实现 FooCrate 只读 Devices 工作区`](006-实现FooCrate只读Devices工作区/README.md)；005 未验收项继续跟踪
+- 状态：006 已验收；005 未验收项继续跟踪
 - 当前阶段：任务 000 已按全非 touch 目标重开并验收；任务 004 的通用 Hash58/profile 实现、范围复评和电脑侧验证已于 2026-09-10 获用户验收
 - 同日实机补充：用户所称 iPod 5.5G 也在纯净 Windows 直接挂载 119 GiB FAT32 volume；Device/iTunes/Artwork 私有 fixture 已完成 19 文件、470,402,770 字节的源/fixture及采集前后 SHA-256 零差异验证，当前只作为 `TraditionalPreserveOnly` 输入
-- 当前下一步：按用户要求存档任务 005 进度。Debug/Release 构建和各 11 项测试通过；用户截图确认 Preferences 页面加载及无设备状态，但右侧 Refresh 按钮被裁切，尚待修正。用户未带连接线，实机读取、Refresh 和插拔验证待有线后逐步指导；继续前先查任务 VALIDATION 第 8 节。尚无新交付包，任务未验收，不进入 006。禁止 computer-use，所有软件使用测试交给用户。
+- 当前下一步：006 的 FooCrate beta.2 只读浏览人工检查已逐项通过并验收；005 DUP-001 继续暂缓。下一阶段需先核对任务 007 事务、备份与恢复核心的规格，不自动进入设备写入。FooCrate 人工验收记录已同步；按用户要求提交推送源码与文档，不上传新测试包或创建 Release。
 - 当前禁止：任务 005 只读，不创建假设备或空 UI，不修改任何 iPod，不为未挂载设备开启或恢复磁盘模式，不访问 `foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读
 
 ## 状态定义
@@ -43,7 +43,7 @@
 | 003 | [实现传统 iTunesDB 共同往返核心](003-实现iPodPhoto数据库往返核心/README.md) | 已验收 | Reader/Model/Writer/Validator、未签名 profile、Nano 4 私有 fixture 的共同记录输入 |
 | 004 | [实现 6G/hash58 与 Nano 4 格式核心](004-实现6G-hash58与Nano4格式核心/README.md) | 已验收 | 通用 6G/hash58 profile、hash58 向量和 Nano 4 fixture 证据；不含设备专用配置 |
 | 005 | [实现全目标家族注册表、Windows 自动发现与只读服务](005-实现全目标家族注册表与Windows自动发现只读服务/README.md) | 实现中 | 所有可挂载非 touch iPod 的识别/分类、设备身份、证据门禁、Library 快照与热插拔生命周期 |
-| 006 | 实现 FooCrate 只读 Devices 工作区 | 待讨论 | 使用真实服务数据的首个 FooCrate 设备 UI |
+| 006 | [实现 FooCrate 只读 Devices 工作区](006-实现FooCrate只读Devices工作区/README.md) | 已验收 | beta.2 只读浏览、播放隔离、热插拔、独立使用及主题/DPI 已通过人工检查 |
 | 007 | 实现设备事务、备份与故障恢复核心 | 待讨论 | 文件系统故障注入、Operation Plan、恢复状态机 |
 | 008 | 完成 Nano 4 实验性 Music 导入 | 待讨论 | 备份、加一首、删除、重启播放和恢复的第一条实机纵向能力 |
 | 009 | 实现早期与传统 iTunesDB 家族 profile | 待讨论 | 早期全尺寸、Mini、Photo/Color/Video、Nano 1/2 的分型证据、Reader/Writer/Validator 与 fixture 往返 |

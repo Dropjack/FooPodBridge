@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 project(FooPodBridge VERSION 0.1.0 LANGUAGES CXX RC)
 
-set(FOOPODBRIDGE_DISPLAY_VERSION "0.1.0-beta.2")
+set(FOOPODBRIDGE_DISPLAY_VERSION "0.1.0-beta.4")
 
 if(NOT WIN32)
   message(FATAL_ERROR "FooPodBridge currently supports Windows only.")

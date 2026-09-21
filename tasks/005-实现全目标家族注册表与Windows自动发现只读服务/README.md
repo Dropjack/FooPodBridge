@@ -51,3 +51,13 @@
 用户手动打开 foobar-dev 并提供截图：Preferences → Tools → FooPodBridge 页面存在，显示 `No iPod devices detected.` 和只读说明；这只证明加载与无设备页面可用。截图同时暴露右侧 Refresh 按钮及详情区域被裁切的布局问题，尚未修复。
 
 用户未带连接线，要求存档并 commit + push 当前必要内容。任务保持“实现中”，不是验收完成；下一轮先修正页面尺寸/布局并核对规格覆盖，使用新的 prerelease 版本构建和打包，再由用户手动检查。连接线可用后继续 Nano 4 只读发现、数量/签名、Refresh 和插拔验证。所有设备写入仍禁止，所有软件操作交给用户。详细断点见 [`VALIDATION.md`](VALIDATION.md) 第 8 节。
+
+## 当前交接点（2026-09-21）
+
+用户已接入其所称 5.5G，提供一项 ReadyReadOnly、一项 NotMounted 的截图，并确认仅连接一台。当前 Windows 只读查询确认一个约 119 GiB 的 Apple iPod 磁盘及 USB/磁盘节点。截图证明已取得 Library，但数量正确性、代际和签名没有完成验收。
+
+经用户授权继续，已修复两条发现路径物理身份不一致的去重缺陷，并按宿主客户区调整信息页控件布局。beta.3 的 Debug/Release 构建及各 11 项测试通过；新包 `dist/FooPodBridge-0.1.0-beta.3.fb2k-component` 已审计。未启动/操作应用、未部署到测试实例、未写设备。下一步用户在 foobar-test 手动安装，检查一台设备只出现一项及 Refresh/详情区域完整可见。其余任务矩阵保持待完成，详见 VALIDATION 第 9 节。
+
+后续复验更正：用户安装 beta.3 并重插仍显示两项。上段“去重缺陷修复”只描述源码变化，不能作为实机重复项解决的结论；DUP-001 仍未解决，根因未确认。截图确认 Refresh 与详情完整显示。用户要求优先推进其他工作，本轮暂缓重复项，不再要求即时安装。
+
+beta.4 已补齐单设备异常隔离、歧义映射读取门禁及其自动验证，Debug/Release 各 11 项通过并完成包审计；任务保持实现中。另已提前准备 006 的 SPEC 与 WORKSPACE.svg，FooCrate 源码未修改，详细 UI 待核对。完整边界和残项见 VALIDATION 第 10 节。

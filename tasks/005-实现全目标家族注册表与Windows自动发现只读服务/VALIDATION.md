@@ -127,3 +127,50 @@ C:\Python314\python.exe scripts/build-local.py test --preset release --output-on
 ```
 
 本轮发现旧本地 CMake 缓存的配置选项为空，已恢复 Debug `/Zi /Ob0 /Od /RTC1`、Release `/O2 /Ob2 /DNDEBUG`、RelWithDebInfo `/Zi /O2 /Ob1 /DNDEBUG` 和 MinSizeRel `/O1 /Ob1 /DNDEBUG` 后完成上述构建。缓存/SDK/编译产物属于本地环境，不提交 Git。后续复现时需确认这些标准配置有效，不能把空选项构建误记成标准 Debug/Release。
+
+## 9. 5.5G 截图、重复设备修复与 beta.3（2026-09-21）
+
+用户说明未带 Nano 4，接入其所称 iPod 5.5G，确认仅连接一台设备。所供截图显示一项 ReadyReadOnly / No error，另一项同名 NotMounted；前者容量约 119 GiB、Library 1862 条（Music 1834、Audiobooks 27、Other 1），普通列表 2、Smart 6、Master 1。截图中 generation unknown、identity incomplete、签名未检查、写入禁用。用户尚未核对数量，不能据此提高 DeviceReadVerified 或推断准确代际，也不能替代 Nano 4 验证。截图仍有右侧控件裁切。
+
+Windows 非交互只读查询：沙箱内 CIM/PnP 被拒绝访问，获工具批准后在沙箱外查询成功，确认一台约 119 GiB Apple iPod USB 磁盘且状态 OK，另有正常 USB 与 DiskDrive 节点。未打印序列号/实例 ID，未读取或写入设备文件，未操作应用。
+
+修复范围：
+
+- 已挂载卷路径原本使用规范化的 Apple 祖先节点，NotMounted 路径却使用原始当前节点；现两条路径共用有界祖先解析及大小写规范化，按同一物理身份去重。
+- 新增合成 PnP 树测试：磁盘/USB 节点与大小写一致性、已挂载节点去重键、不同物理设备不合并、无关节点、FireWire 与循环祖先上限。测试不枚举真实设备。
+- Preferences 初始化时适配宿主客户区，WM_SIZE 调整列表、Refresh、状态与详情控件。实际 DPI、裁切与应用行为仍需用户确认。
+- 版本更新为 0.1.0-beta.3。首次 Debug 构建发现布局计算 LONG/int 类型冲突，修正后第二次构建成功；Release 构建成功，两种配置各 11 项测试全部通过，无新增构建警告。
+- 包审计确认 AMD64、ProductVersion 为 beta.3，内容仅 `foo_pod_bridge.dll`、`LICENSE.txt`、`THIRD_PARTY_NOTICES.txt`。依赖检查仅见 foobar shared.dll、Windows 与 MSVC/UCRT 运行库，无 Apple 闭源 DLL。
+
+产物：`dist/FooPodBridge-0.1.0-beta.3.fb2k-component`。
+
+- 包 SHA-256：`A06B2573709FF6A1C28187111EED2DA1CEF03DDD274C50A7A5F8DFDCCE983CA2`
+- DLL SHA-256：`32EBB62B6073E88A8DA083CD1B569887A21622EEFFEA759ED31BF0D2AC5D5469`
+
+本轮未自动部署、未启动应用、未写设备，未提交或推送。本包是两处修复的人工检查候选，不代表第 2 节全部矩阵完成；任务继续“实现中”。
+
+下一人工检查：用户只在 `D:\dev\foo\FooCrate\.local\foobar-test` 手动导入 beta.3 并重启，打开 Preferences → Tools → FooPodBridge，等待读取完成；展开设备下拉列表，确认仅一项、Refresh 完整可见，反馈截图。收到结果再指导后续 Refresh 与插拔检查。Nano 4、数量/身份/签名、生命周期和第 8 节剩余覆盖均保持待验证。
+
+## 10. beta.3 复验失败、暂缓决定与 beta.4 基础修复
+
+用户明确反馈 beta.3 安装并重新插拔后仍显示两项，提供展开列表截图。Refresh 和详情区域现已完整可见；重复项未解决。不能将 9 节合成祖先测试通过外推为实机根因已确认。DUP-001 暂缓，后续需要在不输出私有身份的前提下核对两条候选的真实父子节点、接口及卷关联，不能凭名称强制合并。
+
+用户要求“不重要就可以延后，往后继续，尽量今天能多做一点”。本轮按只读阶段非阻断缺陷处理 DUP-001；它涉及设备身份，真实写入前必须关闭。此次继续不表示 005 已验收，不增加任何实机写权限。
+
+完成独立基础修复：
+
+- 每台设备的 read_database/still_present 异常在该设备内转换为 ReadError/io_failure，不再由全局捕获清空其他正常设备。枚举自身失败仍使整个 catalog 失效，避免旧快照冒充在线。
+- 在任何数据库 I/O 前核对物理设备到卷的关系：同一卷由多个物理身份认领、同一物理身份出现多个卷、空身份/卷键、硬件证据矛盾或显式 mapping_invalid 均进入 identity_conflict。无法证明唯一映射时只保留诊断，不读取数据库。
+- 完全重复的同一物理/卷证据只读取一次，不再仅因重复通知就把完整身份降级。该逻辑不声称合并实机中来源未明的两个不同身份。
+- 扩充模拟测试，先复现 `one device failure erased catalog`，实现后通过；覆盖异常隔离、枚举失败清除旧结果、两类歧义映射无 I/O、重复证据只读一次、晚到移除、阻塞读取关闭取消，以及 NotMounted/不支持文件系统/恢复/未实现格式/未知硬件/拒绝访问/映射错误的读取门禁。
+
+版本 0.1.0-beta.4：Debug/Release 全构建通过，无新增构建警告，各 11 项 CTest 全部通过。包脚本验证 AMD64、版本和仅含 DLL/许可证/第三方说明的结构，产物 `dist/FooPodBridge-0.1.0-beta.4.fb2k-component`。
+
+- 包 SHA-256：`3FE0AAA8CFD4DA55ED5980C8F4D18C92C346371E39F5E44D675A3C8C150D0412`
+- DLL SHA-256：`715D8F620DE757DC17DB3ED787278056D838FD3C1A965D5FD833F127C0837DBD`
+
+本轮没有再次读取实机、启动应用、自动部署、修改 FooCrate 或提交/推送。保留 beta.3 包；beta.4 不作为 DUP-001 解决包，不要求用户立即再次安装。
+
+提前准备 [`006`](../006-实现FooCrate只读Devices工作区/README.md)：已写清真实服务数据、独立设备树、中央只读表、右栏概览、错误/失效、键盘和生命周期行为，绘制 WORKSPACE.svg 草案；尚未取得详细界面批准或实现 FooCrate 集成。
+
+剩余：DUP-001 实机拓扑、完整型号/身份/profile 交叉证据、数据库指纹、每设备独立通知/调度、服务适配层运行时订阅与拒写测试、Refresh/热插拔/退出句柄人工验证、Nano 4 检查，以及 006 详细 UI 核对。当前自动测试不等同于整个任务完成。

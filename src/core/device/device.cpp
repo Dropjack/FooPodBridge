@@ -272,18 +272,37 @@ void discovery::run(std::stop_token stop) {
             auto candidates = backend_->enumerate(scan);
             if (candidates.size() > 64) throw std::runtime_error("device candidate limit exceeded");
             std::set<std::pair<std::string, std::string>> seen;
-            std::map<std::string, unsigned> physical_counts;
-            for (const auto& c : candidates) ++physical_counts[c.physical_key];
+            std::map<std::string, std::set<std::string>> physical_volumes, volume_owners, hardware_evidence;
+            std::set<std::string> invalid_mappings;
+            for (const auto& c : candidates) {
+                hardware_evidence[c.physical_key].insert(upper(c.hardware_id));
+                if (!c.mapping_valid) invalid_mappings.insert(c.physical_key);
+                if (!c.mounted) continue;
+                physical_volumes[c.physical_key].insert(c.volume_key);
+                volume_owners[c.volume_key].insert(c.physical_key);
+            }
             for (auto& c : candidates) {
                 if (scan.stop_requested()) break;
                 if (!seen.insert({c.physical_key, c.volume_key}).second) continue;
                 if (identify(c.hardware_id).excluded) continue;
-                if (physical_counts[c.physical_key] > 1) c.identity_complete = false;
-                auto preflight = inspect(c, {{}, reason::database_missing});
-                file_result bytes;
-                if (preflight.problem == reason::database_missing) bytes = backend_->read_database(c, scan);
-                auto s = inspect(c, bytes);
-                if (c.mounted && !backend_->still_present(c)) { s = inspect(c, {{}, reason::removed}); }
+                if (c.physical_key.empty() || invalid_mappings.contains(c.physical_key)
+                    || hardware_evidence[c.physical_key].size() > 1
+                    || (c.mounted && (c.volume_key.empty() || physical_volumes[c.physical_key].size() > 1
+                        || volume_owners[c.volume_key].size() > 1))) {
+                    c.mapping_valid = false; c.identity_complete = false;
+                }
+                auto s = inspect(c, {{}, reason::database_missing});
+                // A single device's I/O failure must not erase healthy devices.
+                // Untrusted mappings and unsupported inputs never reach database I/O.
+                if (s.problem == reason::database_missing) {
+                    try {
+                        auto bytes = backend_->read_database(c, scan);
+                        s = inspect(c, bytes);
+                        if (!backend_->still_present(c)) s = inspect(c, {{}, reason::removed});
+                    } catch (...) {
+                        s = inspect(c, {{}, reason::io_failure});
+                    }
+                }
                 if (scan.stop_requested()) break;
                 const auto key = c.physical_key + '\n' + c.volume_key;
                 auto& token = tokens[key];

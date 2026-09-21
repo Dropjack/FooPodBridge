@@ -27,10 +27,19 @@ struct simulated_backend : read_backend {
     std::condition_variable condition;
     std::function<void()> callback;
     bool block{}, entered{}, present{true};
+    bool enumeration_failure{};
+    std::string throwing_device;
+    std::vector<std::string> reads;
     std::vector<candidate> devices{normal()};
-    std::vector<candidate> enumerate(std::stop_token) override { std::lock_guard lock(mutex); return devices; }
-    file_result read_database(const candidate&, std::stop_token cancel) override {
+    std::vector<candidate> enumerate(std::stop_token) override {
+        std::lock_guard lock(mutex);
+        if (enumeration_failure) throw std::runtime_error("private enumeration diagnostic");
+        return devices;
+    }
+    file_result read_database(const candidate& target, std::stop_token cancel) override {
         std::unique_lock lock(mutex);
+        reads.push_back(target.physical_key);
+        if (target.physical_key == throwing_device) throw std::runtime_error("private device diagnostic");
         entered = true;
         condition.notify_all();
         std::stop_callback wake(cancel, [&] { condition.notify_all(); });
@@ -48,6 +57,96 @@ void wait_ready(discovery& d) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
     throw std::runtime_error("discovery timeout");
+}
+void isolated_discovery_cases() {
+    auto backend = std::make_unique<simulated_backend>();
+    auto* simulation = backend.get();
+    auto a = normal(), b = normal();
+    b.physical_key = "second-device"; b.volume_key = "second-volume";
+    simulation->devices = {a, b}; simulation->throwing_device = a.physical_key;
+    discovery d(std::move(backend)); d.start([] {}); wait_ready(d);
+    auto result = d.current();
+    require(result.problem == reason::none && result.devices.size() == 2, "one device failure erased catalog");
+    require(result.devices[0]->status == state::read_error && result.devices[0]->problem == reason::io_failure,
+        "device exception not converted to private-safe read error");
+    require(result.devices[1]->status == state::ready_read_only, "healthy second device lost");
+    const auto old = result.devices[1];
+    {
+        std::lock_guard lock(simulation->mutex);
+        simulation->enumeration_failure = true;
+    }
+    d.refresh(); wait_ready(d);
+    require(d.current().problem == reason::enumeration_failed && d.current().devices.empty(), "enumeration failure retained online snapshots");
+    require(!d.is_current(old->token, old->generation, old->revision), "failed enumeration leaves old snapshot current");
+    {
+        std::lock_guard lock(simulation->mutex);
+        simulation->enumeration_failure = false; simulation->throwing_device.clear();
+        b.volume_key = a.volume_key; simulation->devices = {a, b}; simulation->reads.clear();
+    }
+    d.refresh(); wait_ready(d);
+    result = d.current();
+    require(result.devices.size() == 2 && std::all_of(result.devices.begin(), result.devices.end(), [](const auto& s) {
+        return s->status == state::unidentified && s->problem == reason::identity_conflict;
+    }), "one volume assigned to two devices was trusted");
+    {
+        std::lock_guard lock(simulation->mutex);
+        require(simulation->reads.empty(), "ambiguous volume database was opened");
+        b = a; b.volume_key = "second-volume"; simulation->devices = {a, b};
+    }
+    d.refresh(); wait_ready(d);
+    result = d.current();
+    require(result.devices.size() == 2 && result.devices[0]->problem == reason::identity_conflict
+        && result.devices[1]->problem == reason::identity_conflict, "ambiguous multi-volume device was trusted");
+    {
+        std::lock_guard lock(simulation->mutex);
+        require(simulation->reads.empty(), "ambiguous multi-volume database was opened");
+        simulation->devices = {a, a};
+    }
+    d.refresh(); wait_ready(d);
+    result = d.current();
+    require(result.devices.size() == 1 && result.devices[0]->status == state::ready_read_only
+        && result.devices[0]->identity_complete, "exact duplicate evidence degraded identity");
+    {
+        std::lock_guard lock(simulation->mutex);
+        require(simulation->reads.size() == 1, "exact duplicate caused multiple reads");
+        simulation->present = false;
+    }
+    d.refresh(); wait_ready(d);
+    require(d.current().devices[0]->problem == reason::removed && d.current().devices[0]->tracks.empty(), "late absence retained library");
+    d.stop();
+
+    auto preflight_backend = std::make_unique<simulated_backend>();
+    auto* preflight = preflight_backend.get(); preflight->devices.clear();
+    for (int i = 0; i < 7; ++i) {
+        auto c = normal(); c.physical_key += std::to_string(i); c.volume_key += std::to_string(i);
+        switch (i) {
+        case 0: c.mounted = false; break;
+        case 1: c.filesystem_supported = false; break;
+        case 2: c.recovery_verified = true; break;
+        case 3: c.hardware_id = "USB\\VID_05AC&PID_1300\\PUBLIC"; break;
+        case 4: c.hardware_id = "USB\\VID_1111&PID_1263\\PUBLIC"; break;
+        case 5: c.problem = reason::access_denied; break;
+        case 6: c.mapping_valid = false; break;
+        }
+        preflight->devices.push_back(c);
+    }
+    discovery gated(std::move(preflight_backend)); gated.start([] {}); wait_ready(gated);
+    require(gated.current().devices.size() == 7, "diagnostic candidates disappeared");
+    {
+        std::lock_guard lock(preflight->mutex);
+        require(preflight->reads.empty(), "preflight-rejected candidate reached database I/O");
+    }
+    gated.stop();
+
+    auto blocked_backend = std::make_unique<simulated_backend>();
+    auto* blocked = blocked_backend.get(); blocked->block = true;
+    discovery stopping(std::move(blocked_backend)); stopping.start([] {});
+    {
+        std::unique_lock lock(blocked->mutex);
+        require(blocked->condition.wait_for(lock, std::chrono::seconds(2), [&] { return blocked->entered; }), "shutdown fixture did not enter read");
+    }
+    stopping.stop();
+    require(stopping.current().stopped && stopping.current().devices.empty(), "blocked shutdown published late result");
 }
 }
 int main() {
@@ -170,6 +269,7 @@ int main() {
         require(d.current().devices[0]->token != d.current().devices[1]->token, "same-name devices share token");
         d.stop();
         require(d.current().stopped && d.current().devices.empty(), "shutdown retained live device");
+        isolated_discovery_cases();
         std::cout << "Device registry, classification, paths, signatures and lifecycle passed.\n";
         return 0;
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }

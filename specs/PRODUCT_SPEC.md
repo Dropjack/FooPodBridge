@@ -79,13 +79,12 @@ FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为 Windows 已挂�
 ```text
 <Device>
 ├── Library
-│   └── Music / Audiobook media kinds
 └── Playlists
     ├── Normal playlists
     └── Smart playlists
 ```
 
-- 第一版可以使用统一 Library 管理 Music 与 Audiobook 两种 Media Kind，不强制独立 Audiobooks 页签；具体筛选和目标入口在 UI 任务冻结；
+- 统一 Library 保留 Music 与 Audiobook 两种 Media Kind；只读界面按 `DEC-UI-003` 不设分类页签或分类数量，使用已有设备 Smart Playlist 浏览有声读物；未来导入目标入口另行冻结；
 - playlist 是设备 track ID 引用，不是 foobar playlist；
 - 所有设备曲目必须存在于设备数据库的 track list；
 - UI 可以为设备路径创建 foobar metadb handles 用于播放和属性查看，但不改变设备 namespace 语义。
@@ -237,6 +236,8 @@ Rating 规则使用设备原生 Rating，而不是在设备端执行 foobar 查�
 - 有设备时在 Playlist Browser 下方显示独立 Devices namespace；
 - 设备选择进入 Device Workspace，不覆盖或污染 foobar Playlist Manager；
 - 使用 FooCrate 已有主题、DPI、输入和状态模型；
+- 曲目表顶部沿用普通列表样式，左栏 Library/播放列表显示名称与歌曲总数，不额外显示有声读物数量，见 `DEC-UI-003`；
+- 右上歌曲封面/播放信息不被设备浏览覆盖；Device overview 作为右下 Lyrics/Track details 区域的第三页，不显示页签栏，仅在 iPod 浏览上下文通过鼠标中键轮换，不自动切页或干扰播放，离开后移出轮换并恢复原内容，见 `DEC-UI-003`；
 - 不复制 Core、hash58、数据库和事务源码。
 
 详细布局按 `DEC-UI-003` 在对应 UI 任务设计和批准。

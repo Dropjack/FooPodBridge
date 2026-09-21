@@ -23,13 +23,14 @@ Playlists
 Devices
 └── <Device Name>
     ├── Library
-    │   └── Music / Audiobook media kinds
     └── Playlists
         ├── <Normal Playlist>
         └── <Smart Playlist>
 ```
 
 选择设备节点后进入 Device Workspace。第一版允许在统一 Library 中管理 Music 与 Audiobook，不强制独立 Audiobooks 页签；用户仍必须明确选择导入 Media Kind。详细决定包括筛选/目标入口、中央曲目列表、设备概览、容量条、传输队列、右栏作用和 Smart Playlist 编辑器入口；用户已明确要求到 UI 任务再看 mockup 后决定。
+
+2026-09-21 核对决定（DEC-UI-003）：顶部保持普通曲目列表样式，不新增设备摘要横条或 All/Music/Audiobooks 页签；左栏显示 Library、设备播放列表及各自歌曲总数，不额外展示有声读物分类数量。浏览有声读物沿用设备已有 Smart Playlist 的成员，底层分类和未来导入的明确类型选择保持不变。
 
 ### 独立 Columns UI Device Panel
 
@@ -40,6 +41,8 @@ Devices
 使用 Default UI 原生、简洁的列表和命令外观，提供设备概览、Library/playlist 浏览、导入、删除和进度。复杂 Smart Playlist 编辑通过三个入口共享的统一管理对话框打开。简化视觉不允许简化事务、安全提示或错误结果，任何入口都不提供 Eject。
 
 ## 2. 共享状态
+
+2026-09-21 右栏决定（DEC-UI-003）：右上保留歌曲封面/播放信息；Device overview 移到右下，作为 Lyrics / Track details 之外的条件第三页。仅在浏览 iPod 节点时提供，不因接入设备全局显示，不自动抢走歌词。切回普通内容时隐藏设备页，恢复此前的歌词/歌曲信息；设备浏览与播放状态独立。
 
 三个入口必须表示相同状态：
 
@@ -107,3 +110,8 @@ UI 不能发出“覆盖 iTunesDB”“删除 F12 文件”或“忽略 hash58�
 6. 只在规格批准后实现。
 
 当前文档不冻结像素、颜色、图标或右栏用途。
+
+
+## 2026-09-21 用户修订：隐藏页面入口
+
+用户明确要求恢复 FooCrate 细滚动条，右下不主动显示页签，沿用鼠标中键切换。此决定覆盖此前可见 Lyrics / Track details / Device 页签设计：普通上下文保持原来的两页；iPod 上下文中键依次切换歌词、歌曲信息、设备概览，歌词不可用时跳过。进入设备浏览不自动切页，退出时仍恢复此前普通页面。无需为隐藏入口预留高度。设备树、曲目表、概览滚动条使用主题色的 3 DIP 细滑块并在空闲时隐藏，保留滚轮、拖动和轨道点击。
