@@ -12,12 +12,12 @@
 
 ## 当前进度
 
-- 当前任务：[`006-实现 FooCrate 只读 Devices 工作区`](006-实现FooCrate只读Devices工作区/README.md)；005 未验收项继续跟踪
-- 状态：006 已验收；005 未验收项继续跟踪
+- 当前任务：[`007-实现设备事务备份与故障恢复核心`](007-实现设备事务备份与故障恢复核心/README.md)；006 已验收，005 未验收项继续跟踪
+- 状态：007 实现中；本轮离线核心与正常/中断测试完成，整项任务未验收
 - 当前阶段：任务 000 已按全非 touch 目标重开并验收；任务 004 的通用 Hash58/profile 实现、范围复评和电脑侧验证已于 2026-09-10 获用户验收
 - 同日实机补充：用户所称 iPod 5.5G 也在纯净 Windows 直接挂载 119 GiB FAT32 volume；Device/iTunes/Artwork 私有 fixture 已完成 19 文件、470,402,770 字节的源/fixture及采集前后 SHA-256 零差异验证，当前只作为 `TraditionalPreserveOnly` 输入
-- 当前下一步：006 的 FooCrate beta.2 只读浏览人工检查已逐项通过并验收；005 DUP-001 继续暂缓。下一阶段需先核对任务 007 事务、备份与恢复核心的规格，不自动进入设备写入。FooCrate 人工验收记录已同步；按用户要求提交推送源码与文档，不上传新测试包或创建 Release。
-- 当前禁止：任务 005 只读，不创建假设备或空 UI，不修改任何 iPod，不为未挂载设备开启或恢复磁盘模式，不访问 `foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读
+- 当前下一步：用户于 2026-09-22 授权自主完成无 iPod 实现与测试。007 Core 已完成本轮正常流程、238 个提交中断点和 970 次恢复中断检查，Debug/Release 各 13/13 通过。后续完善服务恢复发现、终端用户恢复入口、首次基线完整枚举和授权绑定，再交付新组件；005 DUP-001 继续暂缓，真实写入前必须解决。详见 007 验证记录。
+- 当前禁止：007 当前仅电脑目录与合成 fixture，不修改任何 iPod，不启用组件写入口、不启动/操作应用，不访问 `foobar-test` 与 C 盘日常 foobar2000；`D:\dev\foo\FooPodBridge\Ref` 永久只读。用户随后已授权提交并推送本轮源码、测试与文档，不包含既有测试包。
 
 ## 状态定义
 
@@ -44,7 +44,7 @@
 | 004 | [实现 6G/hash58 与 Nano 4 格式核心](004-实现6G-hash58与Nano4格式核心/README.md) | 已验收 | 通用 6G/hash58 profile、hash58 向量和 Nano 4 fixture 证据；不含设备专用配置 |
 | 005 | [实现全目标家族注册表、Windows 自动发现与只读服务](005-实现全目标家族注册表与Windows自动发现只读服务/README.md) | 实现中 | 所有可挂载非 touch iPod 的识别/分类、设备身份、证据门禁、Library 快照与热插拔生命周期 |
 | 006 | [实现 FooCrate 只读 Devices 工作区](006-实现FooCrate只读Devices工作区/README.md) | 已验收 | beta.2 只读浏览、播放隔离、热插拔、独立使用及主题/DPI 已通过人工检查 |
-| 007 | 实现设备事务、备份与故障恢复核心 | 待讨论 | 文件系统故障注入、Operation Plan、恢复状态机 |
+| 007 | [实现设备事务、备份与故障恢复核心](007-实现设备事务备份与故障恢复核心/README.md) | 实现中 | 本轮离线 Core 与正常/故障回归通过；服务接入、完整基线门禁与交付待继续 |
 | 008 | 完成 Nano 4 实验性 Music 导入 | 待讨论 | 备份、加一首、删除、重启播放和恢复的第一条实机纵向能力 |
 | 009 | 实现早期与传统 iTunesDB 家族 profile | 待讨论 | 早期全尺寸、Mini、Photo/Color/Video、Nano 1/2 的分型证据、Reader/Writer/Validator 与 fixture 往返 |
 | 010 | 实现 Shuffle 独立数据库家族 | 待讨论 | `iTunesSD`/ShadowDB 代际 profile、能力门禁与 fixture 往返 |

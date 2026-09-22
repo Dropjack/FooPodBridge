@@ -32,11 +32,22 @@ target_compile_options(foopodbridge_core PRIVATE /W4 /WX /permissive- /Zc:__cplu
 
 # These interface targets are permanent dependency boundaries. Later tasks add
 # real implementations without changing the allowed Core dependency direction.
-foreach(core_module IN ITEMS media transaction)
+foreach(core_module IN ITEMS media)
   add_library(foopodbridge_core_${core_module} INTERFACE)
   target_link_libraries(foopodbridge_core_${core_module} INTERFACE foopodbridge_core)
   target_include_directories(foopodbridge_core_${core_module} INTERFACE include)
 endforeach()
+
+add_library(foopodbridge_core_transaction STATIC
+  src/core/transaction/filesystem.cpp
+  src/core/transaction/transaction.cpp
+  src/core/transaction/snapshots.cpp
+  src/core/transaction/database_adapter.cpp
+)
+target_link_libraries(foopodbridge_core_transaction PUBLIC foopodbridge_core PRIVATE bcrypt)
+target_include_directories(foopodbridge_core_transaction PUBLIC include)
+target_compile_definitions(foopodbridge_core_transaction PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+target_compile_options(foopodbridge_core_transaction PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
 
 add_library(foopodbridge_core_database STATIC
   src/core/database/hash58.cpp
@@ -49,6 +60,7 @@ add_library(foopodbridge_core_database STATIC
 target_link_libraries(foopodbridge_core_database PUBLIC foopodbridge_core)
 target_include_directories(foopodbridge_core_database PUBLIC include)
 target_compile_options(foopodbridge_core_database PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
+target_link_libraries(foopodbridge_core_transaction PUBLIC foopodbridge_core_database)
 
 add_library(foopodbridge_core_device STATIC
   src/core/device/device.cpp
@@ -141,6 +153,16 @@ if(BUILD_TESTING)
     target_compile_options(foopodbridge_database_${database_test}_tests PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
     add_test(NAME database_${database_test} COMMAND foopodbridge_database_${database_test}_tests)
   endforeach()
+
+  add_executable(foopodbridge_transaction_tests tests/transaction_tests.cpp)
+  target_link_libraries(foopodbridge_transaction_tests PRIVATE foopodbridge_core_transaction)
+  target_compile_definitions(foopodbridge_transaction_tests PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+  target_compile_options(foopodbridge_transaction_tests PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
+  add_test(NAME transaction_core COMMAND foopodbridge_transaction_tests)
+  add_executable(foopodbridge_transaction_fault_tests tests/transaction_fault_tests.cpp)
+  target_link_libraries(foopodbridge_transaction_fault_tests PRIVATE foopodbridge_core_transaction)
+  target_compile_options(foopodbridge_transaction_fault_tests PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)
+  add_test(NAME transaction_faults COMMAND foopodbridge_transaction_fault_tests)
   target_compile_definitions(foopodbridge_database_private_fixture_tests PRIVATE
     FOOPODBRIDGE_PRIVATE_FIXTURE_ROOT="${CMAKE_SOURCE_DIR}/tests/private-fixtures"
   )
