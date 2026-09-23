@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 project(FooPodBridge VERSION 0.1.0 LANGUAGES CXX RC)
 
-set(FOOPODBRIDGE_DISPLAY_VERSION "0.1.0-beta.4")
+set(FOOPODBRIDGE_DISPLAY_VERSION "0.1.0-beta.8")
 
 if(NOT WIN32)
   message(FATAL_ERROR "FooPodBridge currently supports Windows only.")
@@ -43,6 +43,7 @@ add_library(foopodbridge_core_transaction STATIC
   src/core/transaction/transaction.cpp
   src/core/transaction/snapshots.cpp
   src/core/transaction/database_adapter.cpp
+  src/core/transaction/recovery.cpp
 )
 target_link_libraries(foopodbridge_core_transaction PUBLIC foopodbridge_core PRIVATE bcrypt)
 target_include_directories(foopodbridge_core_transaction PUBLIC include)
@@ -64,9 +65,10 @@ target_link_libraries(foopodbridge_core_transaction PUBLIC foopodbridge_core_dat
 
 add_library(foopodbridge_core_device STATIC
   src/core/device/device.cpp
+  src/core/device/recovery.cpp
   src/core/device/windows_backend.cpp
 )
-target_link_libraries(foopodbridge_core_device PUBLIC foopodbridge_core_database PRIVATE setupapi cfgmgr32 uuid)
+target_link_libraries(foopodbridge_core_device PUBLIC foopodbridge_core_database foopodbridge_core_transaction PRIVATE setupapi cfgmgr32 uuid)
 target_include_directories(foopodbridge_core_device PUBLIC include)
 target_compile_definitions(foopodbridge_core_device PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN _WIN32_WINNT=0x0A00)
 target_compile_options(foopodbridge_core_device PRIVATE /W4 /WX /EHsc /permissive- /Zc:__cplusplus /utf-8)

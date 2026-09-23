@@ -1,5 +1,46 @@
 # 007 验证记录
 
+## 2026-09-23 自动关联实现
+
+服务层现在在后台扫描 foobar 配置目录下的私有 `FooPodBridge/recovery` 仓库。设备完整签名身份经版本化 SHA-256 生成内部仓库键；盘符、显示 token、挂载代次和用户路径都不作为永久键。找到的事务 journal、快照、Last Known Good 和已登记外部备份只读汇总到当前设备状态；没有仓库不会自动创建目录，身份冲突/不完整、代次过期、损坏记录均不关联或明确标为无效。扫描不恢复、不写设备、不把旧备份登记当作当次基线验证。
+
+新增合成测试覆盖重连换盘符、不同身份隔离、重复备份登记、过期基线拒绝、损坏 journal/快照、取消扫描、无写入扫描，以及服务发现结果中的快照/备份数量。Debug CTest 13/13 通过（6.41 秒）。
+
+Release 构建及 CTest 13/13 通过（3.49 秒）。beta.8 包审计仅含 x64 foo_pod_bridge.dll、LICENSE.txt、THIRD_PARTY_NOTICES.txt；SHA-256：CECCC975D456BC6BB08944D81B297EC0FB6DA770D6B2BB242BCAF5DC4D29DE9B。
+
+人工待验证：只在 `D:/dev/foo/FooCrate/.local/foobar-test` 手动导入 `dist/FooPodBridge-0.1.0-beta.8.fb2k-component`，重启并打开 Preferences → Tools → FooPodBridge，先检查不接设备时页面正常。尚未执行应用加载或实机验证。本轮未部署、提交、推送或修改 Ref/FooCrate。
+
+## 2026-09-23 beta.7 原版行为对齐
+
+已按 REFERENCE_RECOVERY.md 核对本地 Ref。移除自行新增的目录恢复表单及入口，保留事务核心、只读恢复发现、基线和离线恢复测试。beta.5/beta.6 相关入口检查仅为历史记录，后续不再执行目录表单验收。用户后续截图显示 beta.6 入口完整，但不构成恢复操作验收。
+
+Debug/Release 构建通过；CTest 各 13/13 通过，分别为 6.02 秒和 3.18 秒。包为 `dist/FooPodBridge-0.1.0-beta.7.fb2k-component`；SHA-256：`F36C0361C518F8A671BB383DF13C78BAF2F692952D49C370D30F5ED1736C54B8`。包审计为 x64，仅包含 foo_pod_bridge.dll、LICENSE.txt、THIRD_PARTY_NOTICES.txt。
+
+当前人工检查已通过：用户按 beta.7 检查点反馈“没问题了”，并提供 Preferences → Tools → FooPodBridge 截图；设置页显示正常，Directory recovery 按钮已移除，当前显示未发现 iPod。此确认仅覆盖本次组件设置页检查，不代表恢复操作或实机写入验收。本轮未运行应用、部署、提交、推送或修改 Ref/FooCrate。
+
+## beta.6 布局修正
+
+用户截图确认 beta.5 目录恢复窗口能完整打开，但 Preferences 页入口按钮右侧被裁切。根因是新增按钮未参加 layout() 的客户区动态布局；beta.6 将其宽度映射为 110 DLU，并按客户区右边距定位、限制最大宽度。没有改动恢复业务逻辑。Debug/Release 构建通过，两配置的组件身份和源码边界检查通过；实际布局仍待用户检查。
+
+新包 `dist/FooPodBridge-0.1.0-beta.6.fb2k-component`，包审计确认 x64 和版本；SHA-256：`399745CFCE5CA30F5A4F149AF6D96EF1BA52E7095265F11C0C40B5FF3D34672E`。旧 beta.5 保留。
+
+## 2026-09-23 恢复集成
+
+- Windows 只读发现检查 journal/完成标记，区分待恢复、已完成和损坏；原生目录测试覆盖损坏记录保留、有效待恢复记录和不修改目录。
+- Core 枚举完整 iPod_Control 文件树，比较相对路径、大小和 SHA-256，前后复核内容和目录集合；绑定任务、身份、挂载代次、能力版本与备份目录。重叠目录、漏备份和过期代次拒绝。
+- 离线恢复会话读取设备副本及电脑仓库记录、验证 LKG，并复用事务引擎。测试实际提交一个不同的 LKG 数据库，并模拟提交前中断，再从会话发现和恢复，校验恢复字节。
+- 设置页新增目录副本恢复入口，后台操作和关闭取消；当前仅 NTFS 普通目录副本，不提供真实卷写入。组件 UI、加载、生命周期的人工检查仍未执行。
+- 任务 007 保持实现中：真实卷身份/备份适配、活动任务授权提供器、FooCrate 可消费的恢复合同仍不能由这轮离线能力替代。
+- 旧包 beta.3/beta.4 保留。新候选 beta.5 独立打包，不部署，不提交/推送。
+- 最终 Debug/Release 全构建通过，CTest 各 13/13（6.16 秒 / 3.22 秒）；既有 238 个提交中断点与 970 次恢复中断回归继续通过。
+- beta.5 包审计通过：x64 DLL、产品版本 0.1.0-beta.5，包内仅 foo_pod_bridge.dll、LICENSE.txt、THIRD_PARTY_NOTICES.txt。
+- 包 SHA-256：`B804429D86FE15732D932492B31730504D0EBDA4CEA61B12FC74F6D745EB2AC8`。
+- DLL SHA-256：`17C446ECB583B5E336C59C56BBA1E85531FBCA32911B2372478C24BB498A4EB9`。
+
+### beta.5 人工检查点（历史记录，beta.7 起停用）
+
+不连接 iPod。只在 `D:/dev/foo/FooCrate/.local/foobar-test` 手动导入本仓库 `dist/FooPodBridge-0.1.0-beta.5.fb2k-component`，重启后打开 Preferences → Tools → FooPodBridge → Directory recovery。预期版本为 beta.5，能打开目录恢复窗口且说明真实 iPod 写入禁用。暂不填写路径或执行恢复；反馈能否打开、窗口是否完整显示及任何错误。通过后再逐项指导目录 fixture 恢复、取消与关闭检查。
+
 2026-09-22：本轮无 iPod 的实现与测试完成。没有实机、UI 或应用加载验证；不得标记整个任务已验收。
 
 ## 构建与回归
@@ -51,4 +92,4 @@ python scripts/build-local.py test --test-dir build/vs2022-x64 -C Release --outp
 
 内存中断注入保留的是模拟时点文件状态，不模拟真实 FAT32 的扇区撕裂、目录持久顺序、USB 控制器缓存或固件播放；这些必须在独立授权实机任务中验证。损坏/未知记录、部分恢复临时文件等无法证明安全的组合保持 RecoveryRequired 或 CleaningRequired，测试通过不表示所有故障均能自动恢复。
 
-运行中组件仍不消费该写入核心；设备恢复发现器、终端用户恢复入口、完整外部基线枚举/授权绑定和组件包交付尚未完成。当前没有新组件包，不需要用户安装或连接设备。本轮没有提交、推送、部署或改动 FooCrate/Ref。
+当前已有只读恢复发现和离线完整基线枚举，beta.7 已交付。正式恢复操作的服务接口、设备与私有仓库自动关联、真实卷门禁及授权绑定仍未完成；beta.7 设置页人工检查已通过，正式恢复操作仍待实现和验收。007 保持实现中。

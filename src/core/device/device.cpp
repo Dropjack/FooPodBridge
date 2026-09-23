@@ -143,7 +143,7 @@ const char* reason_text(reason r) noexcept {
     case reason::content_changed: return "The device or database changed during reading. Refresh to retry.";
     case reason::resource_limit: return "The input exceeds the reader's resource limit.";
     case reason::unsafe_path: return "A device path leaves the allowed directory or uses a reparse point.";
-    case reason::recovery_record: return "An authenticated incomplete transaction requires recovery.";
+    case reason::recovery_record: return "Pending or invalid transaction records require recovery review.";
     case reason::cancelled: return "Reading was cancelled.";
     case reason::enumeration_failed: return "Windows device enumeration failed. Refresh to retry.";
     default: return "A device read failed. No files were changed.";
@@ -162,7 +162,9 @@ snapshot inspect(const candidate& c, const file_result& f) {
     if (!c.mounted) return fail(state::not_mounted, reason::no_volume);
     if (c.problem != reason::none) return fail(state::read_error, c.problem);
     if (!c.filesystem_supported) return fail(state::unsupported_filesystem, reason::filesystem);
-    if (c.recovery_verified) return fail(state::recovery_required, reason::recovery_record);
+    s.recovery_pending = c.recovery_pending;
+    s.recovery_invalid = c.recovery_invalid;
+    if (c.recovery_verified || c.recovery_pending || c.recovery_invalid) return fail(state::recovery_required, reason::recovery_record);
     if (s.identity.group == family::shuffle || s.identity.group == family::nano_later || c.alternative_database)
         return fail(state::format_pending, reason::format_unimplemented);
     if (f.problem == reason::database_missing)
@@ -212,7 +214,8 @@ snapshot inspect(const candidate& c, const file_result& f) {
     return s;
 }
 
-discovery::discovery(std::unique_ptr<read_backend> backend) : backend_(std::move(backend)) {}
+discovery::discovery(std::unique_ptr<read_backend> backend, std::filesystem::path repository)
+    : backend_(std::move(backend)), repository_(std::move(repository)) {}
 discovery::~discovery() { stop(); }
 void discovery::start(std::function<void()> changed) {
     { std::lock_guard lock(mutex_); changed_ = std::move(changed); catalog_.stopped = false; }
@@ -272,9 +275,11 @@ void discovery::run(std::stop_token stop) {
             auto candidates = backend_->enumerate(scan);
             if (candidates.size() > 64) throw std::runtime_error("device candidate limit exceeded");
             std::set<std::pair<std::string, std::string>> seen;
-            std::map<std::string, std::set<std::string>> physical_volumes, volume_owners, hardware_evidence;
+            std::map<std::string, std::set<std::string>> physical_volumes, volume_owners, hardware_evidence, recovery_owners;
             std::set<std::string> invalid_mappings;
             for (const auto& c : candidates) {
+                const auto recovery_key = recovery_repository_key(c);
+                if (!recovery_key.empty()) recovery_owners[recovery_key].insert(c.physical_key);
                 hardware_evidence[c.physical_key].insert(upper(c.hardware_id));
                 if (!c.mapping_valid) invalid_mappings.insert(c.physical_key);
                 if (!c.mounted) continue;
@@ -287,6 +292,7 @@ void discovery::run(std::stop_token stop) {
                 if (identify(c.hardware_id).excluded) continue;
                 if (c.physical_key.empty() || invalid_mappings.contains(c.physical_key)
                     || hardware_evidence[c.physical_key].size() > 1
+                    || recovery_owners[recovery_repository_key(c)].size() > 1
                     || (c.mounted && (c.volume_key.empty() || physical_volumes[c.physical_key].size() > 1
                         || volume_owners[c.volume_key].size() > 1))) {
                     c.mapping_valid = false; c.identity_complete = false;
@@ -303,6 +309,11 @@ void discovery::run(std::stop_token stop) {
                         s = inspect(c, {{}, reason::io_failure});
                     }
                 }
+                s.recovery = inspect_repository(c, repository_, scan);
+                if (s.recovery.pending || s.recovery.invalid) {
+                    s.status = state::recovery_required; s.problem = reason::recovery_record;
+                }
+                if (!backend_->still_present(c)) { s = inspect(c, {{}, reason::removed}); }
                 if (scan.stop_requested()) break;
                 const auto key = c.physical_key + '\n' + c.volume_key;
                 auto& token = tokens[key];

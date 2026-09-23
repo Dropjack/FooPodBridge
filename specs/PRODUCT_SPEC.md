@@ -12,6 +12,8 @@
 
 ## 1. 产品定义
 
+按 DEC-REF-001，原版 iPod Manager 的已核实功能与交互是默认参考，现代 x64 实现与用户审美是产品方向；此前明确的范围、安全与许可边界继续有效。开发用目录、仓库键和签名输入不构成正式恢复界面。
+
 FooPodBridge 是 Windows x64 上的 foobar2000 2.x 组件，为 Windows 已挂载存储卷模式的非 iPod touch 提供读取、手动音乐导入、删除、播放列表、Smart Playlist、封面、SoundCheck、gapless 和 Audiobook 能力。
 
 产品不是 iTunes 媒体库或 iPod 配置功能的替代品，不执行自动 Sync；它把 iPod 作为独立设备 namespace，而不是 foobar Playlist Manager 中的一组普通 playlist。

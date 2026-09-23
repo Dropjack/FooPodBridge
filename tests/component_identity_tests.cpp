@@ -8,7 +8,7 @@ int main() {
 
     if (std::strcmp(component_name, "FooPodBridge") != 0) return 1;
     if (std::strcmp(component_filename, "foo_pod_bridge.dll") != 0) return 2;
-    if (std::strcmp(display_version, "0.1.0-beta.4") != 0) return 3;
+    if (std::strcmp(display_version, "0.1.0-beta.8") != 0) return 3;
     static_assert(file_version_major == 0);
     static_assert(file_version_minor == 1);
     static_assert(file_version_patch == 0);

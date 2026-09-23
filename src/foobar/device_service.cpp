@@ -160,7 +160,21 @@ public:
         default: text << "Not applicable / not read"; break;
         }
         text << "\r\nArtwork database: " << (value_->artwork_present ? "Present (decoding pending)" : "Not observed")
-            << "\r\nDevice writes: Disabled\r\nRecovery record reader: Pending task 007";
+            << "\r\nDevice writes: Disabled\r\nPending recovery records: " << value_->recovery_pending
+            << "\r\nInvalid recovery records: " << value_->recovery_invalid;
+        text << "\r\nComputer recovery records: ";
+        switch (value_->recovery.link) {
+        case d::recovery_link::identity_unavailable: text << "Stable identity unavailable"; break;
+        case d::recovery_link::repository_missing: text << "No repository yet"; break;
+        case d::recovery_link::unavailable: text << "Could not inspect; refresh to retry"; break;
+        case d::recovery_link::available:
+            text << value_->recovery.pending << " pending, " << value_->recovery.invalid << " invalid"
+                << "\r\nDatabase snapshots: " << value_->recovery.snapshots
+                << "\r\nLast Known Good snapshots: " << value_->recovery.last_known_good
+                << "\r\nSaved external backup locations: " << value_->recovery.backups
+                << " (must be reverified before use)";
+            break;
+        }
         out = text.str().c_str();
     }
     bool get_library(c::library_snapshot_v1::ptr& out) noexcept override {
@@ -240,7 +254,10 @@ public:
     void on_init() override {
         auto s = state();
         try {
-            auto e = std::make_shared<d::discovery>(d::make_windows_backend());
+            const auto profile = filesystem::g_get_native_path(core_api::get_profile_path());
+            const std::string native(profile.c_str());
+            const auto root = std::filesystem::path(std::u8string(native.begin(), native.end())) / L"FooPodBridge" / L"recovery";
+            auto e = std::make_shared<d::discovery>(d::make_windows_backend(), root);
             { std::lock_guard lock(s->mutex); s->engine = e; s->running = true; }
             e->start([weak = std::weak_ptr<shared_state>(s)] { post_notification(weak); });
         } catch (...) {

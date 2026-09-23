@@ -61,6 +61,18 @@ void snapshot_store::mark_last_known_good(const std::string& id) {
     if (!host_.size(base + ".lkg")) detail::write(host_, base + ".lkg", data);
     else if (read_all(host_, base + ".lkg") != data) throw failure("lkg_invalid");
 }
+bytes snapshot_store::load_last_known_good(const std::string& id) {
+    const auto entries = inspect();
+    const auto found = std::find_if(entries.begin(), entries.end(), [&](const auto& s) {
+        return s.id == id && s.validated && s.last_known_good && !s.active_recovery;
+    });
+    if (found == entries.end()) throw failure("invalid_lkg");
+    const auto base = prefix_ + id;
+    auto data = read_all(host_, base + ".db");
+    if (read_all(host_, base + ".lkg", 1024) != detail::encode(detail::seal(sha256(data) + "\n"))) throw failure("lkg_changed");
+    validate_(data);
+    return data;
+}
 void snapshot_store::release_recovery(const std::string& id) {
     const auto entries = inspect();
     const auto found = std::find_if(entries.begin(), entries.end(), [&](const auto& s) { return s.id == id && s.validated; });

@@ -252,6 +252,41 @@ engine::engine(filesystem& device, filesystem& host, filesystem& sources, databa
     : device_(device), host_(host), sources_(sources), validate_(std::move(validate)), hooks_(std::move(hooks)) {
     if (!validate_ || !hooks_.current_identity) throw failure("missing_adapter");
 }
+journal_info inspect_journal(std::span<const std::byte> manifest, std::optional<std::span<const std::byte>> completion) {
+    journal_info info;
+    try {
+        if (manifest.size() > 16 * 1024 * 1024 || (completion && completion->size() > 1024)) throw failure("record_limit");
+        const auto r = parse(bytes(manifest.begin(), manifest.end()));
+        info.operation_id = r.input.id; info.device_key = r.input.device.device;
+        info.capability_version = r.input.device.capability_version;
+        if (completion) {
+            const auto selected = detail::unseal(bytes(completion->begin(), completion->end()));
+            if (selected != r.old_hash + "\n" && selected != r.new_hash + "\n") throw failure("completion_record_invalid");
+            info.status = journal_state::completed;
+        } else info.status = journal_state::pending;
+    } catch (const failure&) { info.status = journal_state::invalid; }
+    return info;
+}
+std::vector<journal_info> discover_recovery(filesystem& device) {
+    std::vector<journal_info> out;
+    for (const auto& name : device.list(".foopodbridge")) {
+        if (!name.ends_with(".journal")) continue;
+        if (out.size() >= 10000) throw failure("recovery_catalog_limit");
+        journal_info info;
+        try {
+            if (!safe_path(name) || name.find('/') != std::string::npos) throw failure("record_path");
+            const auto path = ".foopodbridge/" + name;
+            const auto manifest = read_all(device, path, 16 * 1024 * 1024);
+            if (device.size(path + ".done")) {
+                const auto done = read_all(device, path + ".done", 1024);
+                info = inspect_journal(manifest, std::span<const std::byte>(done));
+            } else info = inspect_journal(manifest);
+            if (name != info.operation_id + ".journal") info.status = journal_state::invalid;
+        } catch (const failure&) { info.status = journal_state::invalid; }
+        out.push_back(std::move(info));
+    }
+    return out;
+}
 plan engine::prepare(request input) {
     paths_valid(input);
     guarded device(device_, hooks_, input.device);
@@ -425,5 +460,18 @@ std::vector<std::string> retention_candidates(const std::vector<snapshot>& snaps
         if (valid > 10 && !item.last_known_good && !item.active_recovery) out.push_back(item.id);
     }
     return out;
+}
+std::vector<baseline_entry> verify_baseline_tree(filesystem& source, filesystem& backup, const std::string& directory) {
+    const auto paths = enumerate_files(source, directory);
+    if (paths != enumerate_files(backup, directory)) throw failure("baseline_tree_mismatch");
+    const auto entries = verify_baseline(source, backup, paths);
+    if (paths != enumerate_files(source, directory) || paths != enumerate_files(backup, directory)) throw failure("baseline_tree_changed");
+    // Recheck the whole source after the final backup read, not only each file
+    // immediately after its individual copy comparison.
+    for (const auto& entry : entries)
+        if (source.size(entry.path) != entry.size || fingerprint(source, entry.path) != entry.digest ||
+            backup.size(entry.path) != entry.size || fingerprint(backup, entry.path) != entry.digest) throw failure("baseline_changed");
+    if (paths != enumerate_files(source, directory) || paths != enumerate_files(backup, directory)) throw failure("baseline_tree_changed");
+    return entries;
 }
 } // namespace foopodbridge::core::transaction

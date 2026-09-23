@@ -2,6 +2,7 @@
 #include "foopodbridge/core/device/device.h"
 #include "windows_reader.h"
 #include "windows_identity.h"
+#include "foopodbridge/core/transaction/transaction.h"
 #include <windows.h>
 #include <setupapi.h>
 #include <cfgmgr32.h>
@@ -242,6 +243,9 @@ void enrich(candidate& c, std::stop_token stop) {
     }
     const auto artwork = read_relative_impl(root, L"iPod_Control\\Artwork\\ArtworkDB", 0, stop);
     c.artwork_present = artwork.problem == reason::none || artwork.problem == reason::resource_limit;
+    const auto recovery = detail::probe_recovery(root, stop);
+    c.recovery_pending = recovery.pending; c.recovery_invalid = recovery.invalid;
+    if (recovery.problem != reason::none) c.problem = recovery.problem;
 }
 
 class windows_backend final : public read_backend {
@@ -325,5 +329,48 @@ private:
 std::unique_ptr<read_backend> make_windows_backend() { return std::make_unique<windows_backend>(); }
 file_result detail::read_relative(const std::wstring& root, const std::wstring& relative, std::size_t limit, std::stop_token cancel) {
     return read_relative_impl(root, relative, limit, cancel);
+}
+detail::recovery_probe detail::probe_recovery(const std::wstring& root, std::stop_token cancel) {
+    recovery_probe out;
+    if (cancel.stop_requested()) { out.problem = reason::cancelled; return out; }
+    const auto path = root + L".foopodbridge";
+    handle directory(CreateFileW(path.c_str(), FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE,
+        nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
+    if (!directory.valid()) {
+        const auto problem = last_reason(GetLastError());
+        if (problem != reason::database_missing) out.problem = problem;
+        return out;
+    }
+    BY_HANDLE_FILE_INFORMATION info{};
+    if (!GetFileInformationByHandle(directory.value, &info) ||
+        (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) || !(info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        out.problem = reason::unsafe_path; return out;
+    }
+    WIN32_FIND_DATAW entry{};
+    const auto search = FindFirstFileW((path + L"\\*").c_str(), &entry);
+    if (search == INVALID_HANDLE_VALUE) {
+        if (GetLastError() != ERROR_FILE_NOT_FOUND) out.problem = last_reason(GetLastError());
+        return out;
+    }
+    struct find_close { HANDLE value; ~find_close() { FindClose(value); } } cleanup{search};
+    std::uint32_t count{};
+    do {
+        if (cancel.stop_requested()) { out.problem = reason::cancelled; return out; }
+        if (++count > 10000) { out.problem = reason::resource_limit; return out; }
+        const std::wstring name(entry.cFileName);
+        if (!name.ends_with(L".journal")) continue;
+        if (entry.dwFileAttributes & (FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_DIRECTORY)) { ++out.invalid; continue; }
+        const auto relative = L".foopodbridge\\" + name;
+        const auto record = read_relative_impl(root, relative, 16 * 1024 * 1024, cancel);
+        if (record.problem != reason::none) { ++out.invalid; continue; }
+        const auto done = read_relative_impl(root, relative + L".done", 1024, cancel);
+        if (done.problem != reason::none && done.problem != reason::database_missing) { ++out.invalid; continue; }
+        const auto parsed = transaction::inspect_journal(record.bytes,
+            done.problem == reason::none ? std::optional<std::span<const std::byte>>(done.bytes) : std::nullopt);
+        if (parsed.status == transaction::journal_state::invalid || utf8(name) != parsed.operation_id + ".journal") ++out.invalid;
+        else if (parsed.status == transaction::journal_state::pending) ++out.pending;
+    } while (FindNextFileW(search, &entry));
+    if (GetLastError() != ERROR_NO_MORE_FILES) out.problem = last_reason(GetLastError());
+    return out;
 }
 } // namespace foopodbridge::core::device

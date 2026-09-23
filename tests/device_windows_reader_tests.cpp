@@ -2,6 +2,7 @@
 #include "database_test_support.h"
 #include "core/device/windows_reader.h"
 #include "core/device/windows_identity.h"
+#include "foopodbridge/core/transaction/transaction.h"
 #include <windows.h>
 #include <filesystem>
 #include <fstream>
@@ -35,6 +36,21 @@ int main() {
         require(fs::create_directory(dir), "temporary directory collision");
         fs::create_directories(dir / "iPod_Control" / "iTunes");
         const auto root = dir.wstring() + L"\\";
+        require(detail::probe_recovery(root, {}).pending == 0, "absent journal directory");
+        fs::create_directory(dir / ".foopodbridge");
+        { std::ofstream bad(dir / ".foopodbridge" / "broken.journal"); bad << "invalid"; }
+        require(detail::probe_recovery(root, {}).invalid == 1, "invalid journal hidden");
+        require(fs::exists(dir / ".foopodbridge" / "broken.journal"), "probe deleted evidence");
+        const auto seal = [](const std::string& body) {
+            const auto* data = reinterpret_cast<const std::byte*>(body.data());
+            return body + foopodbridge::core::transaction::sha256(std::span(data, body.size())) + "\n";
+        };
+        const std::string hash(64, 'a');
+        const auto journal = seal("FPBTXN1\nfixture-operation\nfixture-device\n1 1 0\n\"iPod_Control/iTunes/iTunesDB\"\n" + hash + "\n" + hash + "\n0\n0\n");
+        { std::ofstream output(dir / ".foopodbridge" / "fixture-operation.journal", std::ios::binary); output << journal; }
+        require(detail::probe_recovery(root, {}).pending == 1, "native pending journal");
+        { std::ofstream output(dir / ".foopodbridge" / "fixture-operation.journal.done", std::ios::binary); output << seal(hash + "\n"); }
+        require(detail::probe_recovery(root, {}).pending == 0, "native completed journal");
         const auto path = dir / "iPod_Control" / "iTunes" / "iTunesDB";
         const auto bytes = foopodbridge::tests::make_empty().original_bytes;
         { std::ofstream output(path, std::ios::binary); output.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size())); }

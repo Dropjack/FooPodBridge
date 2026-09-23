@@ -5,6 +5,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <functional>
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -66,6 +67,8 @@ struct candidate {
     bool alternative_database{};
     bool artwork_present{};
     bool recovery_verified{};
+    std::uint32_t recovery_pending{};
+    std::uint32_t recovery_invalid{};
     bool initialization_authorized{};
     std::uint64_t capacity{};
     std::uint64_t available{};
@@ -80,7 +83,17 @@ struct library_track {
     media_kind kind{};
     std::string relative_path;
 };
+enum class recovery_link { identity_unavailable, repository_missing, available, unavailable };
+struct recovery_summary {
+    recovery_link link{recovery_link::identity_unavailable};
+    std::uint32_t pending{}, invalid{}, snapshots{}, last_known_good{}, backups{};
+};
+// Private stable key; never exported through the service.
+std::string recovery_repository_key(const candidate& input);
+recovery_summary inspect_repository(const candidate& input, const std::filesystem::path& repository, std::stop_token stop);
+
 struct snapshot {
+    recovery_summary recovery;
     std::string token;
     std::uint64_t generation{};
     std::uint64_t revision{};
@@ -91,6 +104,8 @@ struct snapshot {
     bool identity_complete{};
     bool capacity_known{};
     bool artwork_present{};
+    std::uint32_t recovery_pending{};
+    std::uint32_t recovery_invalid{};
     std::uint64_t capacity{};
     std::uint64_t available{};
     database::hash58_signature_status signature{database::hash58_signature_status::not_applicable};
@@ -120,7 +135,7 @@ struct catalog {
 };
 class discovery final {
 public:
-    explicit discovery(std::unique_ptr<read_backend> backend);
+    explicit discovery(std::unique_ptr<read_backend> backend, std::filesystem::path repository = {});
     ~discovery();
     void start(std::function<void()> changed);
     void refresh();
@@ -131,6 +146,7 @@ private:
     void request(bool topology_changed);
     void run(std::stop_token stop);
     std::unique_ptr<read_backend> backend_;
+    std::filesystem::path repository_;
     mutable std::mutex mutex_;
     std::condition_variable_any wake_;
     std::jthread worker_;

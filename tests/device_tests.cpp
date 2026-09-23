@@ -8,6 +8,9 @@
 #include <cstdio>
 #include <iostream>
 #include <set>
+#include <Windows.h>
+#include "foopodbridge/core/transaction/recovery.h"
+#include "foopodbridge/core/transaction/database_adapter.h"
 
 using namespace foopodbridge::core;
 using namespace foopodbridge::core::device;
@@ -57,6 +60,72 @@ void wait_ready(discovery& d) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
     throw std::runtime_error("discovery timeout");
+}
+void recovery_association_cases() {
+    namespace tx = transaction;
+    auto c = normal();
+    require(recovery_repository_key(c).empty(), "missing signing identity associated");
+    c.signing_identity = "0123456789aBcDeF";
+    const auto key = recovery_repository_key(c);
+    require(key.size() == 64 && key.find(c.signing_identity) == std::string::npos, "private recovery identity");
+    auto remount = c; remount.volume_key = "new-volume"; remount.signing_identity = "0123456789ABCDEF";
+    require(recovery_repository_key(remount) == key, "remount or casing changed association");
+    auto other = c; other.signing_identity = "1123456789abcdef";
+    require(recovery_repository_key(other) != key, "different devices associated");
+    auto bad = c; bad.mapping_valid = false;
+    require(recovery_repository_key(bad).empty(), "conflicting mapping associated");
+    bad = c; bad.signing_identity = "bad";
+    require(recovery_repository_key(bad).empty(), "invalid identity associated");
+    const auto root = std::filesystem::current_path() / ("association-fixture-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
+    const auto repository = root / "host";
+    require(inspect_repository(c, repository, {}).link == recovery_link::repository_missing, "missing repository misreported");
+    require(!std::filesystem::exists(root), "discovery created repository");
+    for (const auto* dir : {"host", "source", "backup"}) std::filesystem::create_directories(root / dir);
+    auto host = tx::local_directory(repository);
+    auto source = tx::local_directory(root / "source"), backup = tx::local_directory(root / "backup");
+    const auto bytes = foopodbridge::tests::make_empty().original_bytes;
+    for (auto* fs : {source.get(), backup.get()}) {
+        fs->create("iPod_Control/iTunes/iTunesDB"); fs->append("iPod_Control/iTunes/iTunesDB", bytes); fs->flush("iPod_Control/iTunes/iTunesDB");
+    }
+    const tx::identity identity{key, 1, 1, false};
+    const auto proof = tx::verify_directory_baseline(root / "source", root / "backup", "fixture", identity, [&] { return identity; });
+    tx::remember_backup(*host, proof, identity, "fixture", root / "source", root / "backup");
+    tx::remember_backup(*host, proof, identity, "fixture", root / "source", root / "backup");
+    require(tx::find_backups(*host, key).size() == 1, "backup registration not idempotent");
+    bool rejected{};
+    auto stale = identity; ++stale.generation;
+    try { tx::remember_backup(*host, proof, stale, "fixture", root / "source", root / "backup"); } catch (const tx::failure&) { rejected = true; }
+    require(rejected, "expired baseline was registered");
+    tx::snapshot_store snapshots(*host, key, tx::traditional_database_validator(database::traditional_unsigned_profile()));
+    snapshots.save("baseline", 1, bytes); snapshots.mark_last_known_good("baseline");
+    auto found = inspect_repository(c, repository, {});
+    require(found.link == recovery_link::available && found.snapshots == 1 && found.last_known_good == 1 && found.backups == 1, "recovery records not associated");
+    require(inspect_repository(other, repository, {}).snapshots == 0 && inspect_repository(other, repository, {}).backups == 0, "another device saw backup");
+    std::stop_source cancelled; cancelled.request_stop();
+    require(inspect_repository(c, repository, cancelled.get_token()).link == recovery_link::unavailable, "cancelled scan published");
+    const auto before = tx::read_all(*host, "snapshots/" + key + "/baseline.db");
+    auto backend = std::make_unique<simulated_backend>(); auto* simulation = backend.get();
+    simulation->devices = {c};
+    discovery d(std::move(backend), repository); d.start([] {}); wait_ready(d);
+    const auto old = d.current().devices.at(0);
+    require(old->recovery.snapshots == 1, "service snapshot omitted recovery");
+    { std::lock_guard lock(simulation->mutex); simulation->devices = {remount}; }
+    simulation->callback(); wait_ready(d);
+    require(d.current().devices.at(0)->recovery.backups == 1 && !d.is_current(old->token, old->generation, old->revision), "reconnect association or invalidation failed");
+    auto duplicate = c; duplicate.physical_key = "second-device"; duplicate.volume_key = "second-volume";
+    { std::lock_guard lock(simulation->mutex); simulation->devices = {c, duplicate}; }
+    simulation->callback(); wait_ready(d);
+    for (const auto& item : d.current().devices) require(item->recovery.link == recovery_link::identity_unavailable, "duplicate identity selected recovery repository");
+    d.stop();
+    require(tx::read_all(*host, "snapshots/" + key + "/baseline.db") == before, "discovery modified snapshot");
+    const std::string path = "transactions/" + key + "/broken/manifest";
+    host->create(path); host->append(path, std::vector<std::byte>{std::byte{'x'}}); host->flush(path);
+    found = inspect_repository(c, repository, {});
+    require(found.invalid == 1 && found.snapshots == 1, "corrupt journal hidden");
+    host->remove("snapshots/" + key + "/baseline.db");
+    found = inspect_repository(c, repository, {});
+    require(found.invalid == 2 && found.last_known_good == 0, "missing snapshot accepted as LKG");
+    std::cout << "Recovery association fixtures retained: " << root.string() << '\n';
 }
 void isolated_discovery_cases() {
     auto backend = std::make_unique<simulated_backend>();
@@ -270,6 +339,7 @@ int main() {
         d.stop();
         require(d.current().stopped && d.current().devices.empty(), "shutdown retained live device");
         isolated_discovery_cases();
+        recovery_association_cases();
         std::cout << "Device registry, classification, paths, signatures and lifecycle passed.\n";
         return 0;
     } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }
