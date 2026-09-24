@@ -53,21 +53,24 @@ recovery_summary inspect_repository(const candidate& c, const std::filesystem::p
         const auto id = identify(c.hardware_id, c.serial_suffix);
         // Read validation is not write authorization. Preserve-only profiles
         // may inspect historical databases without enabling a writer.
-        tx::snapshot_store snapshots(*host, key, [&](std::span<const std::byte> bytes) {
-            check();
-            if (id.group == family::shuffle || id.group == family::nano_later || c.alternative_database)
-                throw tx::failure("profile_unavailable");
-            const auto profile = database::traditional_preserve_only_profile();
-            const auto parsed = id.group == family::signed_traditional
-                ? database::reader{}.read(bytes, database::traditional_hash58_profile(), database::parse_hash58_device_key(c.signing_identity).value())
-                : database::reader{}.read(bytes, profile);
-            if (!parsed || !database::validator{}.validate(parsed.value())) throw tx::failure("snapshot_invalid");
-            return std::vector<std::string>{};
-        });
-        for (const auto& entry : snapshots.inspect()) {
-            check();
-            if (!entry.validated) ++out.invalid;
-            else { ++out.snapshots; if (entry.last_known_good) ++out.last_known_good; }
+        const auto signing_key = database::parse_hash58_device_key(c.signing_identity);
+        out.snapshot_verification_deferred = id.group == family::signed_traditional && !signing_key;
+        if (!out.snapshot_verification_deferred) {
+            tx::snapshot_store snapshots(*host, key, [&](std::span<const std::byte> bytes) {
+                check();
+                if (id.group == family::shuffle || id.group == family::nano_later || c.alternative_database)
+                    throw tx::failure("profile_unavailable");
+                const auto parsed = id.group == family::signed_traditional
+                    ? database::reader{}.read(bytes, database::traditional_hash58_profile(), signing_key.value())
+                    : database::reader{}.read(bytes, database::traditional_preserve_only_profile());
+                if (!parsed || !database::validator{}.validate(parsed.value())) throw tx::failure("snapshot_invalid");
+                return std::vector<std::string>{};
+            });
+            for (const auto& entry : snapshots.inspect()) {
+                check();
+                if (!entry.validated) ++out.invalid;
+                else { ++out.snapshots; if (entry.last_known_good) ++out.last_known_good; }
+            }
         }
         check();
         out.backups = static_cast<std::uint32_t>(tx::find_backups(*host, key).size());

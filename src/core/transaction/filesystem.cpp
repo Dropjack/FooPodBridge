@@ -29,17 +29,20 @@ handle open_directory(const std::filesystem::path& path) {
 }
 class local final : public filesystem {
 public:
-    explicit local(const std::filesystem::path& path) : root_(std::filesystem::absolute(path).lexically_normal()) {
-        if (root_ == root_.root_path() || root_.wstring().rfind(L"\\\\", 0) == 0 ||
-            GetDriveTypeW(root_.root_path().c_str()) != DRIVE_FIXED) throw failure("invalid_test_root");
+    explicit local(const std::filesystem::path& path, bool read_only = false)
+        : root_(std::filesystem::absolute(path).lexically_normal()), read_only_(read_only) {
+        const auto drive_type = GetDriveTypeW(root_.root_path().c_str());
+        if (root_.wstring().rfind(L"\\\\", 0) == 0 ||
+            (read_only_ ? drive_type != DRIVE_FIXED && drive_type != DRIVE_REMOVABLE
+                        : root_ == root_.root_path() || drive_type != DRIVE_FIXED)) throw failure("invalid_test_root");
         std::array<wchar_t, MAX_PATH> volume{}, format{};
         if (!GetVolumePathNameW(root_.c_str(), volume.data(), static_cast<DWORD>(volume.size())) ||
             !GetVolumeInformationW(volume.data(), nullptr, 0, nullptr, nullptr, nullptr, format.data(), static_cast<DWORD>(format.size())) ||
-            _wcsicmp(format.data(), L"NTFS") != 0) throw failure("offline_ntfs_directory_required");
+            (!read_only_ && _wcsicmp(format.data(), L"NTFS") != 0)) throw failure("offline_ntfs_directory_required");
         auto current = root_.root_path();
         // Pin every ancestor without FILE_SHARE_DELETE; check each for junctions.
         for (const auto& segment : root_.relative_path()) { current /= segment; roots_.push_back(open_directory(current)); }
-        if (roots_.empty()) throw failure("invalid_test_root");
+        if (roots_.empty()) roots_.push_back(open_directory(root_));
     }
     std::optional<std::uint64_t> size(const std::string& path) override {
         auto pins = parents(path, false);
@@ -67,11 +70,13 @@ public:
         return count;
     }
     void create(const std::string& path) override {
+        if (read_only_) throw failure("baseline_read_only");
         auto pins = parents(path, true);
         handle h(CreateFileW(resolve(path).c_str(), GENERIC_WRITE, 0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
         ordinary(h, false);
     }
     void append(const std::string& path, std::span<const std::byte> data) override {
+        if (read_only_) throw failure("baseline_read_only");
         auto pins = parents(path, false);
         handle h(CreateFileW(resolve(path).c_str(), FILE_APPEND_DATA, 0, nullptr, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
         ordinary(h, false);
@@ -79,17 +84,20 @@ public:
         if (data.size() > MAXDWORD || !WriteFile(h, data.data(), static_cast<DWORD>(data.size()), &written, nullptr) || written != data.size()) throw failure("short_write");
     }
     void flush(const std::string& path) override {
+        if (read_only_) throw failure("baseline_read_only");
         auto pins = parents(path, false);
         handle h(CreateFileW(resolve(path).c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, nullptr));
         ordinary(h, false);
         if (!FlushFileBuffers(h)) throw failure("flush_failed");
     }
     void rename(const std::string& from, const std::string& to) override {
+        if (read_only_) throw failure("baseline_read_only");
         auto a = parents(from, false); auto b = parents(to, true);
         if (!size(from) || size(to)) throw failure("rename_conflict");
         if (!MoveFileExW(resolve(from).c_str(), resolve(to).c_str(), MOVEFILE_WRITE_THROUGH)) throw failure("rename_failed");
     }
     void remove(const std::string& path) override {
+        if (read_only_) throw failure("baseline_read_only");
         auto pins = parents(path, false);
         if (!size(path)) return;
         if (!DeleteFileW(resolve(path).c_str())) throw failure("remove_failed");
@@ -149,6 +157,7 @@ private:
         return pins;
     }
     std::filesystem::path root_;
+    bool read_only_{};
     std::vector<handle> roots_;
 };
 }
@@ -171,6 +180,7 @@ bool safe_path(const std::string& path) {
     return true;
 }
 std::unique_ptr<filesystem> local_directory(const std::filesystem::path& root) { return std::make_unique<local>(root); }
+std::unique_ptr<filesystem> read_only_directory(const std::filesystem::path& root) { return std::make_unique<local>(root, true); }
 std::string sha256(std::span<const std::byte> data) { detail::hash hash; hash.add(data); return hash.finish(); }
 bytes read_all(filesystem& fs, const std::string& path, std::uint64_t limit) {
     const auto size = fs.size(path);
@@ -270,5 +280,31 @@ baseline_proof verify_directory_baseline(const std::filesystem::path& source, co
     guarded_source.check();
     proof.identity_ = expected; proof.task_ = task; proof.source_ = a; proof.backup_ = b;
     return proof;
+}
+baseline_audit audit_read_only_baseline(const std::filesystem::path& source, const std::filesystem::path& backup,
+    const identity& expected, const std::function<identity()>& current,
+    const std::function<void(std::size_t, std::size_t)>& progress) {
+    if (!detail::key(expected.device) || !expected.generation || !expected.capability_version || !current)
+        throw failure("baseline_binding");
+    const auto a = normalized_root(source), b = normalized_root(backup);
+    if (nested(a, b) || nested(b, a)) throw failure("baseline_overlap");
+    auto input = read_only_directory(source), external = read_only_directory(backup);
+    baseline_reader guarded_source(*input, expected, current), guarded_backup(*external, expected, current);
+    const auto paths = enumerate_files(guarded_source, "iPod_Control");
+    if (paths != enumerate_files(guarded_backup, "iPod_Control")) throw failure("baseline_tree_mismatch");
+    baseline_audit result{};
+    for (const auto& path : paths) {
+        const auto size = guarded_source.size(path);
+        if (!size || guarded_backup.size(path) != size) throw failure("baseline_size");
+        if (fingerprint(guarded_source, path) != fingerprint(guarded_backup, path)) throw failure("baseline_changed");
+        if (*size > std::numeric_limits<std::uint64_t>::max() - result.bytes) throw failure("baseline_size");
+        result.bytes += *size;
+        ++result.files;
+        if (progress) progress(result.files, paths.size());
+    }
+    if (paths != enumerate_files(guarded_source, "iPod_Control") ||
+        paths != enumerate_files(guarded_backup, "iPod_Control")) throw failure("baseline_tree_changed");
+    guarded_source.check();
+    return result;
 }
 } // namespace foopodbridge::core::transaction

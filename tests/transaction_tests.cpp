@@ -90,6 +90,49 @@ int main() {
         require(verify_baseline_tree(*source, *backup, "iPod_Control").size() == 1, "complete baseline enumeration");
         const auto proof = verify_directory_baseline(root / "source", root / "backup", "task-007", current, [&] { return current; });
         require(proof.matches(current, "task-007", root / "source", root / "backup"), "baseline binding");
+        auto read_only_source = read_only_directory(root / "source");
+        require(read_all(*read_only_source, "iPod_Control/Music/F00/a.mp3") == audio,
+                "read-only source cannot read existing media");
+        bool read_only_rejected = false;
+        try { read_only_source->create("iPod_Control/Music/F00/new.mp3"); }
+        catch (const failure&) { read_only_rejected = true; }
+        require(read_only_rejected && !std::filesystem::exists(root / "source/iPod_Control/Music/F00/new.mp3"),
+                "read-only source created device media");
+        const auto old_path = "iPod_Control/Music/F00/a.mp3";
+        const auto new_path = "iPod_Control/Music/F00/renamed.mp3";
+        read_only_rejected = false;
+        try { read_only_source->append(old_path, audio); } catch (const failure&) { read_only_rejected = true; }
+        require(read_only_rejected, "read-only source appended media");
+        read_only_rejected = false;
+        try { read_only_source->flush(old_path); } catch (const failure&) { read_only_rejected = true; }
+        require(read_only_rejected, "read-only source flushed media");
+        read_only_rejected = false;
+        try { read_only_source->rename(old_path, new_path); } catch (const failure&) { read_only_rejected = true; }
+        require(read_only_rejected && !std::filesystem::exists(root / "source" / new_path),
+                "read-only source renamed media");
+        read_only_rejected = false;
+        try { read_only_source->remove(old_path); } catch (const failure&) { read_only_rejected = true; }
+        require(read_only_rejected && read_all(*read_only_source, old_path) == audio,
+                "read-only source changed media");
+        const auto volume_audit = audit_read_only_baseline(root / "source", root / "backup", current,
+            [&] { return current; });
+        require(volume_audit.files == 1 && volume_audit.bytes == audio.size(), "read-only audit did not check complete media tree");
+        const auto saved_media = audio;
+        auto changed_audio = audio; changed_audio[0] ^= std::byte{1};
+        backup->remove("iPod_Control/Music/F00/a.mp3");
+        put(*backup, "iPod_Control/Music/F00/a.mp3", changed_audio);
+        bool mismatch_rejected = false;
+        try { (void)audit_read_only_baseline(root / "source", root / "backup", current, [&] { return current; }); }
+        catch (const failure&) { mismatch_rejected = true; }
+        require(mismatch_rejected, "read-only audit accepted changed backup content");
+        backup->remove("iPod_Control/Music/F00/a.mp3");
+        put(*backup, "iPod_Control/Music/F00/a.mp3", saved_media);
+        auto changed_during_read = current;
+        bool stale_rejected = false;
+        try { (void)audit_read_only_baseline(root / "source", root / "backup", current,
+            [&] { ++changed_during_read.generation; return changed_during_read; }); }
+        catch (const failure&) { stale_rejected = true; }
+        require(stale_rejected, "read-only audit accepted changed mount generation");
         auto changed_identity = current; ++changed_identity.generation;
         require(!proof.matches(changed_identity, "task-007", root / "source", root / "backup"), "stale baseline generation");
         require(!proof.matches(current, "other-task", root / "source", root / "backup"), "baseline wrong task");

@@ -125,6 +125,41 @@ void recovery_association_cases() {
     host->remove("snapshots/" + key + "/baseline.db");
     found = inspect_repository(c, repository, {});
     require(found.invalid == 2 && found.last_known_good == 0, "missing snapshot accepted as LKG");
+
+    // A physical Classic identity can locate its private records even when
+    // the independent hash58 signing input is not available on this mount.
+    auto classic = normal();
+    classic.physical_key = "synthetic-classic";
+    classic.hardware_id = "USB\\VID_05AC&PID_1261\\TEST";
+    classic.signing_identity = "0011223344556677";
+    const auto classic_key = recovery_repository_key(classic);
+    const auto signing_key = database::parse_hash58_device_key(classic.signing_identity);
+    require(signing_key.has_value(), "synthetic Classic signing key invalid");
+    const auto signed_doc = database::writer{}.create_empty("Library", database::traditional_hash58_profile(),
+        signing_key.value(), foopodbridge::tests::fixed_generation());
+    require(signed_doc.has_value(), "synthetic Classic database generation failed");
+    tx::snapshot_store classic_snapshots(*host, classic_key,
+        tx::traditional_database_validator(database::traditional_hash58_profile(), signing_key.value()));
+    classic_snapshots.save("classic-baseline", 1, signed_doc.value().original_bytes);
+    classic_snapshots.mark_last_known_good("classic-baseline");
+    const tx::identity classic_identity{classic_key, 1, 1, false};
+    const auto classic_proof = tx::verify_directory_baseline(root / "source", root / "backup", "fixture",
+        classic_identity, [&] { return classic_identity; });
+    tx::remember_backup(*host, classic_proof, classic_identity, "fixture", root / "source", root / "backup");
+    classic.signing_identity.clear();
+    classic.identity_complete = false;
+    const auto unsigned_view = inspect_repository(classic, repository, {});
+    require(unsigned_view.link == recovery_link::available && unsigned_view.backups == 1,
+        "missing signing input hid physical recovery records");
+    require(unsigned_view.snapshot_verification_deferred,
+        "missing signing input did not mark Classic snapshot validation as deferred");
+    require(unsigned_view.snapshots == 0 && unsigned_view.last_known_good == 0,
+        "unverified Classic snapshot was offered as a recovery point");
+    classic.signing_identity = "0011223344556677";
+    const auto signed_view = inspect_repository(classic, repository, {});
+    require(signed_view.link == recovery_link::available && signed_view.snapshots == 1
+        && signed_view.last_known_good == 1 && !signed_view.snapshot_verification_deferred,
+        "Classic snapshot not verified when signing input returned");
     std::cout << "Recovery association fixtures retained: " << root.string() << '\n';
 }
 void isolated_discovery_cases() {

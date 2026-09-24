@@ -37,7 +37,7 @@ BEGIN
             VALUE "LegalCopyright", "Copyright (c) 2026 FooPodBridge contributors\0"
             VALUE "OriginalFilename", "foo_pod_bridge.dll\0"
             VALUE "ProductName", "FooPodBridge\0"
-            VALUE "ProductVersion", "0.1.0-beta.10\0"
+            VALUE "ProductVersion", "0.1.0-beta.12\0"
         END
     END
     BLOCK "VarFileInfo"

@@ -33,6 +33,25 @@ int main() {
         require(key(4) == L"1394\\APPLE_COMPUTER__INC.&IPOD\\FAKE-C", "FireWire identity lost");
         require(detail::physical_ancestor(0, [](int) { return std::wstring(L"ROOT"); },
             [](int n, int& p) { p = n; return true; }).empty(), "cyclic ancestry not bounded");
+        const std::array<std::wstring, 5> nested_ids{L"ROOT", L"USB\\VID_05AC&PID_1261\\PHYSICAL-A",
+            L"USB\\VID_05AC&PID_1261&MI_00\\INTERFACE-A", L"USBSTOR\\DISK&VEN_APPLE&PROD_IPOD\\A",
+            L"USB\\VID_05AC&PID_1261\\PHYSICAL-B"};
+        const std::array<int, 5> nested_parents{-1, 0, 1, 2, 0};
+        const auto chain = detail::physical_ancestors(3,
+            [&](int n) { return nested_ids.at(n); },
+            [&](int n, int& parent) { parent = nested_parents.at(n); return parent >= 0; });
+        require(chain.size() == 2U && chain[0] == L"USB\\VID_05AC&PID_1261&MI_00\\INTERFACE-A" &&
+            chain[1] == L"USB\\VID_05AC&PID_1261\\PHYSICAL-A",
+            "mounted disk did not retain both Apple ancestor aliases");
+        const std::set<std::wstring> mounted_chain(chain.begin(), chain.end());
+        require(mounted_chain.contains(detail::physical_ancestor(1,
+            [&](int n) { return nested_ids.at(n); },
+            [&](int n, int& parent) { parent = nested_parents.at(n); return parent >= 0; })),
+            "physical parent of a mounted iPod was emitted as a second NotMounted device");
+        require(!mounted_chain.contains(detail::physical_ancestor(4,
+            [&](int n) { return nested_ids.at(n); },
+            [&](int n, int& parent) { parent = nested_parents.at(n); return parent >= 0; })),
+            "a different iPod with the same model was hidden");
         require(fs::create_directory(dir), "temporary directory collision");
         fs::create_directories(dir / "iPod_Control" / "iTunes");
         const auto root = dir.wstring() + L"\\";

@@ -7,7 +7,7 @@ namespace foopodbridge::identity {
 
 inline constexpr char component_name[] = "FooPodBridge";
 inline constexpr char component_filename[] = "foo_pod_bridge.dll";
-inline constexpr char display_version[] = "0.1.0-beta.10";
+inline constexpr char display_version[] = "0.1.0-beta.12";
 inline constexpr char about_message[] =
     "Read-only discovery and library bridge for disk-mode non-touch iPods.\n"
     "Service contract: 1.1. Device writes are disabled.";

@@ -386,10 +386,16 @@ namespace {
             if (!parsed) {
                 return result<database_document>::failure(parsed.error());
             }
-            if (profile.kind == profile_kind::traditional_hash58 && node.header_size != 584U) {
+            if (profile.kind == profile_kind::traditional_hash58 &&
+                node.header_size != 584U && node.header_size != 624U) {
                 return result<database_document>::failure(make_error(
                     error_code::unsupported_signed_profile, record_offset, "mhit", "root/tracks/track",
-                    "hash58 track record does not use the observed 584-byte header"));
+                    "hash58 track record does not use an observed 584-byte or 624-byte header"));
+            }
+            if (profile.kind == profile_kind::traditional_hash58 && node.header_size == 624U) {
+                document.has_opaque_dependency = true;
+                document.diagnostics.push_back({record_offset, "root/tracks/track",
+                    "extended 624-byte track header is readable but not writable"});
             }
             record_offset += static_cast<std::size_t>(node.section_size);
             list_node.children.push_back(std::move(node));

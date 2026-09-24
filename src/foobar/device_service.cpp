@@ -168,10 +168,14 @@ public:
         case d::recovery_link::repository_missing: text << "No repository yet"; break;
         case d::recovery_link::unavailable: text << "Could not inspect; refresh to retry"; break;
         case d::recovery_link::available:
-            text << value_->recovery.pending << " pending, " << value_->recovery.invalid << " invalid"
-                << "\r\nDatabase snapshots: " << value_->recovery.snapshots
-                << "\r\nLast Known Good snapshots: " << value_->recovery.last_known_good
-                << "\r\nSaved external backup locations: " << value_->recovery.backups
+            text << value_->recovery.pending << " pending, " << value_->recovery.invalid << " invalid";
+            if (value_->recovery.snapshot_verification_deferred)
+                text << "\r\nDatabase snapshots: Verification deferred (signing identity unavailable)"
+                    << "\r\nLast Known Good snapshots: Verification deferred";
+            else
+                text << "\r\nDatabase snapshots: " << value_->recovery.snapshots
+                    << "\r\nLast Known Good snapshots: " << value_->recovery.last_known_good;
+            text << "\r\nSaved external backup locations: " << value_->recovery.backups
                 << " (must be reverified before use)";
             break;
         }

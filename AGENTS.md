@@ -47,13 +47,21 @@ Before inspecting, inferring from, or modifying this repository:
 - Do not create a third foobar2000 installation under FooPodBridge.
 - A task must explicitly authorize real iPod writes. Discovery tests or read-only tests never imply permission to modify an attached device.
 
+# Real iPod and iPod_Control copy read budget
+
+- Do not scan, enumerate, hash, compare, or test an entire user `iPod_Control` copy or attached iPod by default. The presence of a copy, a connected device, or general permission to continue read-only work is not authorization for a bulk scan, including on any iPods connected in the future.
+- Do not read files under `iPod_Control/Music` unless a specific, current problem requires those bytes. Prefer reference code, synthetic fixtures, the small device/database files needed for the question, and the minimum targeted metadata. Do not collect or print song titles, paths, identifiers, or database contents in public artifacts.
+- Before any necessary bulk read of a user copy or real device, explain the exact question it answers, why a smaller check is insufficient, which files and approximate total bytes will be read, and the expected time/cost. Obtain the user's explicit approval for that individual scan. Previous approval does not carry over to another scan or device.
+- Automated builds, unit tests, diagnostics, and newly connected devices must never trigger a bulk scan of user data. Run routine regression tests only against synthetic or approved small fixtures. Stop when enough evidence answers the question; do not repeat a successful scan for reassurance.
+- Keep backup verification required before a separately authorized real-device write, but schedule any large verification only after the user approves that specific read. A successful read-only comparison never grants write permission.
+
 # Local build tools
 
 Do not assume CMake or CTest is on `PATH`. Use the Visual Studio bundled executables:
 
 ```powershell
-$CMake = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe'
-$CTest = 'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\ctest.exe'
+$CMake = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe'
+$CTest = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\ctest.exe'
 ```
 
 If either path does not exist, report the environment mismatch and consult the approved development setup task; do not fall back to bare `cmake` or `ctest`.

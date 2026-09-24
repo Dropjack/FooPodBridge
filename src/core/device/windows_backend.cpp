@@ -57,6 +57,15 @@ std::string apple_ancestor(DEVINST node) {
         return CM_Get_Parent(&parent, child, 0) == CR_SUCCESS;
     }));
 }
+std::vector<std::string> apple_ancestors(DEVINST node) {
+    const auto wide_ids = detail::physical_ancestors(node, node_id, [](DEVINST child, DEVINST& parent) {
+        return CM_Get_Parent(&parent, child, 0) == CR_SUCCESS;
+    });
+    std::vector<std::string> ids;
+    ids.reserve(wide_ids.size());
+    for (const auto& id : wide_ids) ids.push_back(utf8(id));
+    return ids;
+}
 reason last_reason(DWORD e) {
     switch (e) {
     case ERROR_FILE_NOT_FOUND: case ERROR_PATH_NOT_FOUND: return reason::database_missing;
@@ -73,7 +82,7 @@ std::optional<DWORD> disk_number(HANDLE file) {
         && returned >= sizeof(number) && number.DeviceType == FILE_DEVICE_DISK) return number.DeviceNumber;
     return {};
 }
-struct disk { DWORD number; std::string hardware; std::string node; };
+struct disk { DWORD number; std::string hardware; std::vector<std::string> apple_aliases; };
 std::vector<disk> disks() {
     device_set set{SetupDiGetClassDevsW(&GUID_DEVINTERFACE_DISK, nullptr, nullptr, DIGCF_PRESENT | DIGCF_DEVICEINTERFACE)};
     if (set.value == INVALID_HANDLE_VALUE) throw std::runtime_error("disk enumeration unavailable");
@@ -96,7 +105,7 @@ std::vector<disk> disks() {
         if (ancestor.empty() || identify(ancestor).excluded) continue;
         handle file(CreateFileW(detail->DevicePath, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, 0, nullptr));
         if (!file.valid()) continue;
-        if (const auto number = disk_number(file.value)) found.push_back({*number, ancestor, utf8(node_id(info.DevInst))});
+        if (const auto number = disk_number(file.value)) found.push_back({*number, ancestor, apple_ancestors(info.DevInst)});
     }
     return found;
 }
@@ -266,7 +275,7 @@ public:
                 candidate c; c.physical_key = disk.hardware; c.hardware_id = disk.hardware;
                 c.volume_key = utf8(root.data());
                 enrich(c, cancel);
-                mounted.insert(disk.hardware);
+                for (const auto& alias : disk.apple_aliases) mounted.insert(alias);
                 result.push_back(std::move(c));
             }
         } while (FindNextVolumeW(volume_search, root.data(), static_cast<DWORD>(root.size())));

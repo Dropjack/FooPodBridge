@@ -27,6 +27,8 @@
 - 当前 Nano 4 fixture 固定观察到 dataset 顺序 `4/1/3/2/5`：album list、track list、两份 playlist 视图和 special playlists。固定历史 Writer 证明前四类是 6G 基础结构，type 5 只在 special playlists 有效时出现；因此公开空库必须生成前四类，不能为了凑成五类伪造私有 special-playlist 内容。真实 fixture 中存在的 type 5 继续原字节保留，并在依赖未建模时阻断语义修改；
 - Reader 必须接受 fixture 已观察到的 6G 记录版本差异：非空库 `mhit` header 584、`mhyp` header 140，Restore 后 `mhyp` header 184。Writer 的新生成版本由 profile 明确选择，不能从文件大小或营销型号猜测。
 
+2026-09-24 补充只读证据：另一台实机 Classic 当前的版本 115 数据库，其 1862 个 `mhit` 均为 624 字节 header；Ref 的原版读取/写出路径覆盖到该 header 的偏移 620。Reader 仅为只读识别接受 624 变体，并标记未建模扩展依赖以拒绝语义重写；任务 004 已验收的 584 字节 Writer 输出合同不因此扩大。
+
 Reader 观察到合法 hash58 envelope 不等于授予可写能力。只有显式 `TraditionalHash58`、有效设备密钥、Validator 通过且无不安全 opaque 依赖时才允许生成。
 
 ## 3. 私有设备密钥

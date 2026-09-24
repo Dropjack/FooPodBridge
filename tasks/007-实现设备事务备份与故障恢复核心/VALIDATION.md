@@ -1,3 +1,35 @@
+## 2026-09-24 beta.12 刷新后曲库消失的修复候选
+
+用户报告 Classic 保持连接、Windows 资源管理器仍可打开卷，但刷新后第一条设备变为 `Format pending`、Library 不可用，第二条为 `Not mounted`。只读检查当前 FAT32 卷的 `iTunesDB`：4,109,656 字节，`mhbd` header 244、版本 115、1862 条曲目、全部 `mhit` header 624；未观察到 `iTunesCDB` 或 `iTunes Library.itlp`。旧 Hash58 Reader 在首条曲目拒绝 624 字节 header；使用无写能力的 PreserveOnly profile 可解析并验证 1862 条。Ref 原版 `itunesdb.cpp` 读取到偏移 620，支持该 624 字节变体。没有复制数据库或将私有内容写入仓库。
+
+新增纯合成 624 字节回归先复现拒绝，再允许 Hash58 Reader 只读解析并标记 opaque 依赖；语义重写仍明确拒绝，未观察到的 608 字节变体继续拒绝。更新后的 Reader 对当前设备数据库只读解析及 Validator 均通过，返回 1862 首。另对 Windows PnP 做只读查询，确认同一已挂载磁盘父链有两层 Apple ID；挂载别名修正详见任务 005。使用新 Release Core 的非交互 Windows 发现诊断直接读取当前设备，结果为 1 台已挂载、`Ready - read-only`、1862 首；实机 UI 尚待复验。
+
+beta.12 Debug/Release 全构建成功，各 13/13 CTest 通过。交付包 `dist/FooPodBridge-0.1.0-beta.12.fb2k-component` 为 183,458 字节，SHA-256 `9BB4840861BB2700584E9B00E8D6CBD02E108E9865A7FAB251CBCC34536EAE73`；ZIP CRC、x64、ProductVersion、包内仅 `foo_pod_bridge.dll`/`LICENSE.txt`/`THIRD_PARTY_NOTICES.txt` 且 DLL 与 Release 一致。没有部署、启动或操作 foobar2000，也没有设备写入/恢复。下一人工检查：用户在 `foobar-test` 手动安装 beta.12，保持该 Classic 可访问，刷新一次，核对仅一条设备且 Library 1862 首再次出现；之后再单独检查电脑侧恢复状态。
+
+用户随后明确反馈 beta.12 的 Refresh 正常、重复设备项消失；记录为该 Classic 的刷新及单设备显示检查通过。本轮未附截图，不能从反馈单独确认恢复资料字段或完整备份门禁。用户另将 `iPod_Control` 副本置于仓库外的 `D:/Dev/FooPodBridge/iPod_Control`，授权只读使用。初步盘点：`Music` 下 1862 文件；完整 `iPod_Control` 树在副本与当前设备各有 1881 个文件，路径及大小全部匹配；副本与当前设备的 `iTunesDB` SHA-256 相同，Reader/Validator 离线读取 1862 首。`Device/SysInfo` 为 0 字节，`SysInfoExtended` 缺失；这份副本不会自动补齐签名输入。尚未逐文件比较全部约 26 GiB 内容，也未完成稳定身份/恢复门禁绑定，因此只称为备份候选，不称已验证可恢复基线。原始副本不进入 Git 或发布包。
+
+进一步使用同一 Reader/Validator 对副本数据库逐条核对音乐路径：1862 条引用对应 1862 个不同的非空普通文件，不安全路径、缺失文件、非普通文件、重复引用和空文件均为 0。此检查只读副本，没有逐字节比对全部音乐，也没有修改设备或副本。
+
+随后新增只读卷入口和独立内容审计：入口支持当前 Windows 可访问的可移动卷根，全部创建、追加、Flush、改名和删除调用直接拒绝；审计按完整 `iPod_Control` 树逐文件比较设备与外部副本的大小和 SHA-256，期间定期核对同一物理设备仍映射到当前卷，结束时重新枚举两端文件树并再次核对设备映射。对当前 Classic 与 `D:/Dev/FooPodBridge/iPod_Control` 执行后正常返回：1881/1881 文件、26,102,223,051 字节内容一致，缺失、额外和哈希差异均为 0。设备与副本均通过只读入口访问，未写入任何文件。该单次内容审计不产生 `baseline_proof`，不能替代当前任务授权、完整签名输入、恢复方案和首次实机写入门禁。
+
+只读入口的电脑目录回归覆盖读取成功、五种修改操作全部拒绝、内容不同和挂载代次变化时审计失败；当前可移动卷根的只读枚举实际返回 1881 文件。最终 x64 Debug/Release 完整构建通过，各 13/13 CTest 通过；本轮没有需要用户安装的组件行为变更，未生成或交付新候选包。
+
+## 2026-09-24 beta.11 无设备人工检查
+
+用户在 `foobar-test` 手动安装候选后回复“一切正常”，并提供 FooPodBridge Preferences 与 FooCrate 主界面截图。设置页正常显示 `No iPod devices detected.`，FooCrate 保持普通播放列表、歌曲信息和歌词界面；此时未连接 iPod。记录为 beta.11 无设备加载及设置页检查通过。截图未显示组件版本号，也不证明实机读取、恢复或写入；任务 007 继续实现中。下一检查点为同一台 Classic 的只读连接状态。
+
+## 2026-09-24 Classic 播放与设备列表反馈
+
+用户随后接入 Classic，反馈“能放歌了！显示了！”。FooCrate 截图显示设备 Library 1862 首、`Space Song` 正在播放、专用 `FooPodBridge playback` 列表含 1 首；这支持本次实机只读浏览和单曲播放通过。截图也显示第二条同名 Classic，005 的 DUP-001 仍未解决。此图未包含 FooPodBridge Preferences 的完整设备状态，因此尚不能判定 beta.11 的电脑侧恢复资料关联和签名验证暂缓显示是否正确；下一检查点只读取该状态页。没有实机写入或恢复授权。
+
+## 2026-09-24 缺少签名输入时的只读恢复资料
+
+Classic 的物理身份可用于定位私有恢复仓库，但当前实机没有提供 hash58 签名输入。新增合成回归先在旧实现上复现失败：一份已登记备份和一个已签名 LKG 快照存在时，清除签名输入使仓库查询错误地返回“无法检查”。修正后只读查询仍可报告事务记录和已登记备份，数据库快照/LKG 明确标为验证暂缓，数量不冒充零个有效恢复点；补回签名输入后同一快照通过验证。恢复执行及实机写入仍未开放。
+
+本机原定 Visual Studio Build Tools 路径已不存在；按任务 002 的固定工具链原则核实了现有 Visual Studio Community 的 CMake/CTest 绝对路径和 `3.31.6-msvc6` 版本，并同步 `AGENTS.md` 与 `scripts/build-local.py`。没有使用 PATH 上的裸工具或安装新依赖。
+
+Debug/Release 完整构建和两配置各 13/13 CTest 通过。候选包 `dist/FooPodBridge-0.1.0-beta.11.fb2k-component` 为 181,627 字节，SHA-256 `92AF326B66A075D5303868D181DCFBF3339B0E6617BF92D301F5E465268F5C49`；包内仅 x64 `foo_pod_bridge.dll`、`LICENSE.txt` 和 `THIRD_PARTY_NOTICES.txt`，ProductVersion 为 `0.1.0-beta.11`。本轮没有启动应用、接入或写入 iPod；组件加载、无设备设置页和后续 Classic 只读状态仍待用户逐项检查。任务 007 继续实现中。
+
 ## 2026-09-24 身份来源调整
 
 实机 Classic 的只读截图显示设备卷和数据库可读，但 `SysInfo/FireWire GUID` 没有提供 hash58 签名输入。恢复资料定位已改为使用经过设备正向识别和映射校验的物理设备身份哈希；它只用于查找私有恢复记录，不代表签名验证，也不授权写入。这样在身份字段缺失时仍可区分“可定位恢复资料”和“可写数据库身份”。该改动通过 Debug 设备发现测试；完整 beta.9 回归结果如下。

@@ -43,6 +43,9 @@ public:
 // Only an existing, non-root local directory is accepted. No discovery or volume
 // writer is exposed by this adapter; tests create their own directory first.
 std::unique_ptr<filesystem> local_directory(const std::filesystem::path& root);
+// Read-only access to an existing Windows directory or mounted volume root.
+// This adapter never exposes a device writer.
+std::unique_ptr<filesystem> read_only_directory(const std::filesystem::path& root);
 bool safe_path(const std::string& path);
 std::string sha256(std::span<const std::byte> data);
 std::string fingerprint(filesystem& fs, const std::string& path);
@@ -145,6 +148,11 @@ private:
 };
 baseline_proof verify_directory_baseline(const std::filesystem::path& source, const std::filesystem::path& backup,
     const std::string& task, const identity& expected, const std::function<identity()>& current);
+struct baseline_audit { std::size_t files{}; std::uint64_t bytes{}; };
+// Checks complete content while identity remains stable. An audit is not a write authorization.
+baseline_audit audit_read_only_baseline(const std::filesystem::path& source, const std::filesystem::path& backup,
+    const identity& expected, const std::function<identity()>& current,
+    const std::function<void(std::size_t, std::size_t)>& progress = {});
 // Caller enumerates the complete iPod_Control tree under a stable read session.
 // The list is explicit to avoid silently excluding inaccessible entries.
 std::vector<baseline_entry> verify_baseline(filesystem& source, filesystem& backup,

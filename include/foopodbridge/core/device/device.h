@@ -87,6 +87,7 @@ enum class recovery_link { identity_unavailable, repository_missing, available, 
 struct recovery_summary {
     recovery_link link{recovery_link::identity_unavailable};
     std::uint32_t pending{}, invalid{}, snapshots{}, last_known_good{}, backups{};
+    bool snapshot_verification_deferred{};
 };
 // Private stable key; never exported through the service.
 std::string recovery_repository_key(const candidate& input);

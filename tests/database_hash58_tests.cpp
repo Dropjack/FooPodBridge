@@ -236,6 +236,63 @@ int main() {
         foopodbridge::tests::require(
             !wrong_key_no_op && wrong_key_no_op.error().code == error_code::hash58_mismatch,
             "hash58 no-op accepted the wrong device key");
+
+        auto extended = empty_a.value().original_bytes;
+        const auto tracks_dataset = static_cast<std::size_t>(read_u32(extended, 4U)) +
+            static_cast<std::size_t>(read_u32(extended, static_cast<std::size_t>(read_u32(extended, 4U)) + 8U));
+        const auto track_record = tracks_dataset + profile.dataset_header_size + profile.list_header_size;
+        std::vector<std::byte> extended_record(624U);
+        extended_record[0] = std::byte{'m'};
+        extended_record[1] = std::byte{'h'};
+        extended_record[2] = std::byte{'i'};
+        extended_record[3] = std::byte{'t'};
+        set_u32(extended_record, 4U, 624U);
+        set_u32(extended_record, 8U, 624U);
+        set_u32(extended_record, 16U, 1U);
+        std::fill(extended_record.begin() + 584U, extended_record.end(), std::byte{0x5a});
+        extended.insert(extended.begin() + static_cast<std::ptrdiff_t>(track_record),
+            extended_record.begin(), extended_record.end());
+        set_u32(extended, tracks_dataset + 8U, read_u32(extended, tracks_dataset + 8U) + 624U);
+        set_u32(extended, tracks_dataset + profile.dataset_header_size + 8U, 1U);
+        set_u32(extended, 8U, read_u32(extended, 8U) + 624U);
+        std::size_t playlists_dataset = read_u32(extended, 4U);
+        for (unsigned index = 0; index < 3U; ++index) playlists_dataset += read_u32(extended, playlists_dataset + 8U);
+        foopodbridge::tests::require(read_u32(extended, playlists_dataset + 12U) == 2U,
+            "signed master dataset was not found");
+        const auto master_record = playlists_dataset + profile.dataset_header_size + profile.list_header_size;
+        const auto master_end = master_record + read_u32(extended, master_record + 8U);
+        std::vector<std::byte> member(profile.playlist_item_header_size);
+        member[0] = std::byte{'m'};
+        member[1] = std::byte{'h'};
+        member[2] = std::byte{'i'};
+        member[3] = std::byte{'p'};
+        set_u32(member, 4U, profile.playlist_item_header_size);
+        set_u32(member, 8U, profile.playlist_item_header_size);
+        set_u32(member, 24U, 1U);
+        extended.insert(extended.begin() + static_cast<std::ptrdiff_t>(master_end), member.begin(), member.end());
+        set_u32(extended, master_record + 8U, read_u32(extended, master_record + 8U) + profile.playlist_item_header_size);
+        set_u32(extended, master_record + 16U, 1U);
+        set_u32(extended, playlists_dataset + 8U, read_u32(extended, playlists_dataset + 8U) + profile.playlist_item_header_size);
+        set_u32(extended, 8U, read_u32(extended, 8U) + profile.playlist_item_header_size);
+        const auto extended_read = reader{}.read(extended, profile, "public-extended-hash58-track");
+        if (!extended_read) std::cerr << "extended fixture error: " << extended_read.error().summary << '\n';
+        foopodbridge::tests::require(extended_read.has_value() &&
+            extended_read.value().model.tracks.size() == 1U &&
+            extended_read.value().has_opaque_dependency &&
+            validator{}.validate(extended_read.value()).has_value(),
+            "reference-backed 624-byte track header was not safely read-only parsed");
+        auto extended_edit = extended_read.value();
+        extended_edit.model.tracks.front().title = "Changed title";
+        extended_edit.modified = true;
+        const auto extended_write = writer{}.write(extended_edit, profile, key.value(), generation);
+        foopodbridge::tests::require(!extended_write && extended_write.error().code == error_code::opaque_dependency,
+            "extended track header permitted a semantic rewrite");
+        auto unobserved = extended;
+        set_u32(unobserved, track_record + 4U, 608U);
+        const auto unobserved_read = reader{}.read(unobserved, profile, "public-unobserved-track-header");
+        foopodbridge::tests::require(!unobserved_read &&
+            unobserved_read.error().code == error_code::unsupported_signed_profile,
+            "unobserved track header was silently accepted");
         return 0;
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
