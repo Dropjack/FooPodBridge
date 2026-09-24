@@ -153,6 +153,7 @@ snapshot inspect(const candidate& c, const file_result& f) {
     snapshot s;
     s.identity = identify(c.hardware_id, c.serial_suffix);
     s.identity_complete = c.identity_complete;
+    s.mount_root = c.volume_key;
     s.capacity_known = c.capacity_known; s.capacity = c.capacity; s.available = c.available;
     s.artwork_present = c.artwork_present;
     const auto fail = [&](state status, reason why) { s.status = status; s.problem = why; return s; };

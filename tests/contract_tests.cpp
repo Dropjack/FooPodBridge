@@ -41,7 +41,7 @@ int main() {
 
     static_assert(abi_major_v1 == 1);
     static_assert(abi_minor_v1 == 0);
-    static_assert(readonly_contract_minor == 1);
+    static_assert(readonly_contract_minor == 2);
     static_assert(std::is_base_of_v<device_provider_v1, device_provider_readonly_v1>);
     static_assert(std::is_base_of_v<device_snapshot_v1, device_snapshot_readonly_v1>);
     static_assert(std::is_abstract_v<service_v1>);

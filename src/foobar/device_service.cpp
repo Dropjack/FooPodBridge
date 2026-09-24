@@ -177,6 +177,7 @@ public:
         }
         out = text.str().c_str();
     }
+    void get_mount_root(pfc::string_base& out) override { out = value_->mount_root.c_str(); }
     bool get_library(c::library_snapshot_v1::ptr& out) noexcept override {
         out.release(); if (value_->status != d::state::ready_read_only) return false;
         try { out = new service_impl_t<library_impl>(value_); return true; } catch (...) { return false; }

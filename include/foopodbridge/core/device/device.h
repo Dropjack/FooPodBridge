@@ -110,6 +110,7 @@ struct snapshot {
     std::uint64_t available{};
     database::hash58_signature_status signature{database::hash58_signature_status::not_applicable};
     std::string profile;
+    std::string mount_root;
     std::vector<library_track> tracks;
     std::vector<database::playlist> playlists;
     std::optional<database::playlist> master;

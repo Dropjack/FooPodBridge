@@ -64,18 +64,18 @@ void wait_ready(discovery& d) {
 void recovery_association_cases() {
     namespace tx = transaction;
     auto c = normal();
-    require(recovery_repository_key(c).empty(), "missing signing identity associated");
+    require(!recovery_repository_key(c).empty(), "stable physical identity was not associated");
     c.signing_identity = "0123456789aBcDeF";
     const auto key = recovery_repository_key(c);
     require(key.size() == 64 && key.find(c.signing_identity) == std::string::npos, "private recovery identity");
     auto remount = c; remount.volume_key = "new-volume"; remount.signing_identity = "0123456789ABCDEF";
     require(recovery_repository_key(remount) == key, "remount or casing changed association");
-    auto other = c; other.signing_identity = "1123456789abcdef";
+    auto other = c; other.physical_key = "other-physical-device";
     require(recovery_repository_key(other) != key, "different devices associated");
     auto bad = c; bad.mapping_valid = false;
     require(recovery_repository_key(bad).empty(), "conflicting mapping associated");
-    bad = c; bad.signing_identity = "bad";
-    require(recovery_repository_key(bad).empty(), "invalid identity associated");
+    bad = c; bad.physical_key.clear();
+    require(recovery_repository_key(bad).empty(), "missing stable identity associated");
     const auto root = std::filesystem::current_path() / ("association-fixture-" + std::to_string(GetCurrentProcessId()) + "-" + std::to_string(GetTickCount64()));
     const auto repository = root / "host";
     require(inspect_repository(c, repository, {}).link == recovery_link::repository_missing, "missing repository misreported");
@@ -112,7 +112,7 @@ void recovery_association_cases() {
     { std::lock_guard lock(simulation->mutex); simulation->devices = {remount}; }
     simulation->callback(); wait_ready(d);
     require(d.current().devices.at(0)->recovery.backups == 1 && !d.is_current(old->token, old->generation, old->revision), "reconnect association or invalidation failed");
-    auto duplicate = c; duplicate.physical_key = "second-device"; duplicate.volume_key = "second-volume";
+    auto duplicate = c; duplicate.volume_key = "second-volume";
     { std::lock_guard lock(simulation->mutex); simulation->devices = {c, duplicate}; }
     simulation->callback(); wait_ready(d);
     for (const auto& item : d.current().devices) require(item->recovery.link == recovery_link::identity_unavailable, "duplicate identity selected recovery repository");

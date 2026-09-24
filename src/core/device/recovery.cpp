@@ -9,14 +9,11 @@
 namespace foopodbridge::core::device {
 namespace tx = transaction;
 std::string recovery_repository_key(const candidate& c) {
-    if (!c.mounted || !c.mapping_valid || !c.identity_complete || !identify(c.hardware_id, c.serial_suffix).positive)
+    if (!c.mounted || !c.mapping_valid || c.physical_key.empty() || !identify(c.hardware_id, c.serial_suffix).positive)
         return {};
-    const auto key = database::parse_hash58_device_key(c.signing_identity);
-    if (!key) return {};
-    auto text = c.signing_identity;
-    for (auto& ch : text) if (ch >= 'a' && ch <= 'f') ch = static_cast<char>(ch - 'a' + 'A');
-    // Namespace and hash keep raw hardware identifiers out of filenames/UI.
-    text = "FooPodBridge-recovery-v1:" + text;
+    // This key is only for locating private recovery evidence. It is separate
+    // from the hash58 signing input and never authorizes a writer.
+    auto text = "FooPodBridge-recovery-identity-v2:" + c.physical_key;
     return tx::sha256(std::as_bytes(std::span(text.data(), text.size())));
 }
 recovery_summary inspect_repository(const candidate& c, const std::filesystem::path& repository, std::stop_token stop) {

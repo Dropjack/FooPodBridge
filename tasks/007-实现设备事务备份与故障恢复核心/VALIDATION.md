@@ -1,3 +1,13 @@
+## 2026-09-24 身份来源调整
+
+实机 Classic 的只读截图显示设备卷和数据库可读，但 `SysInfo/FireWire GUID` 没有提供 hash58 签名输入。恢复资料定位已改为使用经过设备正向识别和映射校验的物理设备身份哈希；它只用于查找私有恢复记录，不代表签名验证，也不授权写入。这样在身份字段缺失时仍可区分“可定位恢复资料”和“可写数据库身份”。该改动通过 Debug 设备发现测试；完整 beta.9 回归结果如下。
+
+## 2026-09-24 实机只读检查：Classic
+
+用户在指定 `foobar-test` 中连接一台约 119 GiB 的 iPod Classic。设置页显示 `Ready - read-only`、`TraditionalHash58`、容量 119.00 GiB / 可用 94.67 GiB，读取到 1862 首曲目（Music 1834、Audiobooks 27、Other 1），播放列表 2 个普通、6 个 Smart、1 个 Master；FooCrate Devices 也显示对应 Library 与播放列表。Pending/Invalid recovery records 均为 0，说明本次只读发现和数据库读取成功。
+
+该设备代际仍未知，且页面显示 `Identity: Incomplete; current mount only`、`Signature: Not checked (identity unavailable)`、`Stable identity unavailable`。这不是数据库读取失败；设备卷的 SysInfo/FireWire GUID 没提供当前实现所需的稳定签名输入。因此本次证据等级为实机只读读取，继续禁止写入和恢复关联，不能由截图授权实机写入。下一步只修复身份来源/证据记录，再重新执行只读检查；不伪造 hash58 输入。
+
 # 007 验证记录
 
 ## 2026-09-23 自动关联实现
